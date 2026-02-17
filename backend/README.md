@@ -1,0 +1,194 @@
+## CopyTrack Backend
+
+Il backend di **CopyTrack** espone una serie di **API REST** multi‑tenant per la gestione di:
+- autenticazione e setup iniziale della scuola,
+- docenti e relativi limiti di copie,
+- utenti dell’istituto (admin, collaboratori),
+- registrazioni delle fotocopie effettuate.
+
+È scritto in **TypeScript** usando **Express**, con **PostgreSQL** (es. Neon) come database e **Drizzle ORM** per l’accesso ai dati.
+
+### Stack backend
+
+- Node.js + TypeScript
+- Express (API REST)
+- PostgreSQL (`pg`) ospitato su Neon
+- Drizzle ORM (`drizzle-orm`, `drizzle-kit`)
+- Autenticazione JWT (`jsonwebtoken`) + refresh token
+- Hashing password con `bcrypt`
+- Validazione con Zod (schemi definiti in `shared/validation.ts`)
+- Test di integrazione con Vitest + Supertest
+
+### Struttura principale
+
+- `src/index.ts`: entry point dell’app Express.
+  - Registra i middleware globali (CORS, `express.json()`).
+  - Espone le rotte:
+    - `/api/auth` (pubbliche, autenticazione e setup).
+    - `/api/docenti` (protette, admin/collaboratori).
+    - `/api/utenti` (protette, solo admin).
+    - `/api/registrazioni-copie` (protette, admin/collaboratori).
+  - Applica i middleware `authMiddleware`, `tenantStoreMiddleware`, `requireRole` e `errorHandler`.
+- `src/route/*.ts`: singole route (authentication, docenti, utenti, registrazioni copie).
+- `src/db/tenantStore.ts`: contiene la logica di accesso ai dati per un singolo istituto (`istitutoId`), con metodi per docenti, utenti, registrazioni copie, ecc.
+- `src/db/schema.ts`: definizioni delle tabelle Drizzle (istituti, utenti, docenti, registrazioni, token di refresh, ...).
+- `src/middleware/auth.ts`: middleware per:
+  - estrarre e verificare il JWT,
+  - applicare `requireRole('admin')` o altri ruoli,
+  - gestire gli errori applicativi.
+- `src/db/test-setup.ts`, `src/db/test-seed.ts`, `src/route/*.integration.test.ts`: setup e test di integrazione.
+
+### Rotte principali
+
+#### Autenticazione – `/api/auth`
+
+- `POST /api/auth/setup-scuola`
+  - Crea un **nuovo istituto** e il relativo **utente admin** in un’unica operazione.
+  - Body con due blocchi:
+    - `istituto`: dati della scuola (`codiceIstituto`, nome, ecc.).
+    - `utente`: dati dell’admin (email, password, ...).
+  - Usa `insertIstitutoSchema` e `registerSchema` per validazione.
+  - Crea lo `tenantStore` per l’istituto e registra l’admin con ruolo `admin`.
+
+- `POST /api/auth/login`
+  - Login con `identifier` (email o username) e `password`.
+  - Verifica credenziali, genera:
+    - access token JWT (scadenza breve),
+    - refresh token (salvato a DB con scadenza).
+  - Risposta: `token`, `refreshToken`, dati utente (id, email, username, ruolo).
+
+- `POST /api/auth/logout`
+  - Invalida un `refreshToken` marcandolo come `revokedAt`.
+
+- `POST /api/auth/refresh`
+  - Riceve un `refreshToken` valido e non scaduto.
+  - Lo invalida e ne genera uno nuovo.
+  - Restituisce un **nuovo access token** e un **nuovo refresh token**.
+
+#### Docenti – `/api/docenti`
+
+Protette da `authMiddleware` + `tenantStoreMiddleware` (accesso per istituto).
+
+- `GET /api/docenti`
+  - Restituisce una **lista paginata** di docenti con filtri/ordinamenti.
+  - Usa `docentiQuerySchema` per validare query string.
+  - Risposta con `{ data, pagination }`.
+
+- `POST /api/docenti/new-docente` (solo admin)
+  - Crea un nuovo docente per l’istituto corrente.
+  - Body validato con `insertDocenteSchema` (senza `istitutoId`, gestito da store).
+
+- `PUT /api/docenti/update-docente/:id` (solo admin)
+  - Aggiorna dati di un docente esistente (`nome`, `cognome`, `limiteCopie`, ecc.).
+
+- `DELETE /api/docenti/delete-docente/:id` (solo admin)
+  - Elimina un docente dell’istituto corrente.
+  - Risposta con `id` del docente eliminato.
+
+#### Utenti – `/api/utenti`
+
+Protette da `authMiddleware` + `tenantStoreMiddleware` + `requireRole('admin')`.
+
+- `GET /api/utenti`
+  - Restituisce lista paginata degli utenti dell’istituto.
+  - Query validata con `utentiQuerySchema` (paginazione, filtri per ruolo/identifier, ordinamento) da `shared/validation.ts`.
+
+- `POST /api/utenti/new-utente`
+  - Crea un nuovo utente (tipicamente collaboratore o admin).
+  - Body validato con `createUtenteSchema` (ruolo, email/username, password).
+
+- `PUT /api/utenti/update-utente/:id`
+  - Aggiorna i dati di un utente (es. username, password).
+  - `id` validato con `uuidParamSchema`, body validato con `modifyUtenteSchema`.
+
+- `DELETE /api/utenti/delete-utente/:id`
+  - Elimina un utente e restituisce l’`id` eliminato.
+  - `id` validato con `uuidParamSchema`.
+
+#### Registrazioni copie – `/api/registrazioni-copie`
+
+Protette da `authMiddleware` + `tenantStoreMiddleware`.
+
+- `GET /api/registrazioni-copie`
+  - (Rotta tipicamente riservata ad admin) restituisce lista paginata di registrazioni con filtri.
+  - Query validata con `registrazioniCopieQuerySchema` (paginazione, filtri per docenteId/utenteId, ordinamento).
+
+- `POST /api/registrazioni-copie/new-registrazione`
+  - Crea una **nuova registrazione di copie** effettuate da un docente.
+  - Body:
+    - `docenteId`: docente a cui attribuire le copie.
+    - `copieEffettuate`: numero di copie.
+    - `utenteId`: utente (admin/collaboratore) che ha registrato l’operazione.
+    - `note` opzionali.
+  - Body validato con `insertRegistrazioneSchema`.
+  - Lo store:
+    - verifica che docente e utente appartengano all’istituto,
+    - controlla i limiti di copie,
+    - salva la registrazione.
+
+- `DELETE /api/registrazioni-copie/delete-registrazione/:id`
+  - Elimina una registrazione dell’istituto.
+  - Risposta: `{ id }` della registrazione cancellata.
+  - `id` validato con `idParamSchema`.
+
+### Modello dati (alto livello)
+
+In `tenantStore` e nello schema Drizzle troverai entità come:
+
+- `istituti`: scuole/istituti configurati in CopyTrack.
+- `utenti`: utenti dell’istituto (`admin`, `collaboratore`), con password hashata e ruolo.
+- `docenti`: docenti associati a un istituto, con `limiteCopie` e contatori.
+- `registrazioniCopie`: singole registrazioni di copie effettuate, legate a docente, utente e istituto.
+- `refreshTokens`: token di refresh per la gestione sicura delle sessioni.
+
+Ogni tabella è filtrata per `istitutoId` per garantire l’isolamento dei dati tra istituti.
+
+### Setup & avvio
+
+#### Variabili d’ambiente
+
+Creare un file `.env` in `backend` (o configurare le variabili nel tuo ambiente) con almeno:
+
+- `DATABASE_URL`: connection string PostgreSQL (Neon o altro).
+- `JWT_SECRET`: chiave segreta per firmare i JWT.
+- `PORT`: porta HTTP su cui esporre il backend (default 3000).
+- Eventuali altre variabili richieste dal tuo setup DB.
+
+#### Installazione dipendenze
+
+Nella root hai già eseguito `npm install`. Se vuoi lavorare solo sul backend:
+
+```bash
+cd backend
+npm install
+```
+
+#### Avvio in sviluppo
+
+```bash
+cd backend
+npm run dev
+```
+
+L’app ascolterà su `http://localhost:3000` (o la porta configurata).
+
+### Test
+
+Per eseguire i test (unitari/integrati) del backend:
+
+```bash
+cd backend
+npm test
+```
+
+I test di integrazione (`src/route/*.integration.test.ts`) usano Vitest + Supertest e coprono:
+- autenticazione (`/api/auth`),
+- gestione docenti,
+- gestione utenti,
+- registrazioni copie.
+
+### Note architetturali
+
+- Il backend è pensato per essere **multi‑tenant per istituto**: ogni richiesta autenticata porta con sé un `istitutoId` (dal JWT) e lo `tenantStore` opera solo sui dati di quell’istituto.
+- La validazione centralizzata tramite Zod (in `shared`) mantiene **consistenza** tra ciò che accetta il backend e ciò che il frontend invia/si aspetta.
+
