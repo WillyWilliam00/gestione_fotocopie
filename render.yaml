@@ -1,0 +1,23 @@
+services:
+  - type: web
+    name: gestione-fotocopie-backend
+    env: node
+    # Root directory del progetto (monorepo)
+    rootDir: .
+    # Build command: installa anche le devDependencies (tipi TS) e compila il backend
+    buildCommand: NODE_ENV=development npm install && cd backend && NODE_ENV=development npm run build
+    # Start command: avvia il server compilato
+    startCommand: cd backend && npm start
+    # Variabili d'ambiente (da configurare nel dashboard Render)
+    envVars:
+      - key: DATABASE_URL
+        sync: false  # Deve essere impostata manualmente con la connection string di Neon
+      - key: JWT_SECRET
+        generateValue: true  # Render genera automaticamente una chiave segreta
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        fromService:
+          type: web
+          name: gestione-fotocopie-backend
+          property: port
