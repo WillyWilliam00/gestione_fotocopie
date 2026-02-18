@@ -9,9 +9,58 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldLabel, FieldContent } from "@/components/ui/field";
 import { DataTable } from "./table/DataTable";
 import { createColumnsDocenti, type Docenti } from "./table/columns";
-import { useState } from "react";
+import { useState, Suspense } from "react";
+import { useDocentiSuspense } from "@/hooks/use-docenti";
+import type { DocentiQuery } from "../../../shared/validation.js";
 
 type DialogMode = 'add' | 'edit' | 'view' | null;
+
+const defaultQuery: DocentiQuery = { page: 1, pageSize: 20, sortOrder: 'asc' };
+
+/** Contenuto che sospende fino al caricamento dei docenti; da usare dentro <Suspense>. */
+function GestioneDocentiContent({
+  query,
+  onView,
+  onEdit,
+  onDelete,
+  onAddClick,
+  onImportClick,
+}: {
+  query: DocentiQuery;
+  onView: (docente: Docenti) => void;
+  onEdit: (docente: Docenti) => void;
+  onDelete: (docente: Docenti) => void;
+  onAddClick: () => void;
+  onImportClick: () => void;
+}) {
+  const { data, isFetching } = useDocentiSuspense(query);
+  const columns = createColumnsDocenti({ onView, onEdit, onDelete });
+  const tableData: Docenti[] = data.data.map((d) => ({
+    nome: d.nome,
+    cognome: d.cognome,
+    copieEffettuate: d.copieEffettuate,
+    copieRimanenti: d.copieRimanenti,
+    limite: d.limiteCopie,
+  }));
+
+  return (
+    <div className="w-full mt-4">
+      {isFetching && (
+        <div className="text-muted-foreground text-sm py-1" aria-live="polite">
+          Aggiornamento dati…
+        </div>
+      )}
+      <DataTable
+        columns={columns}
+        data={tableData}
+        showAddButton={true}
+        showImportButton={true}
+        onAddClick={onAddClick}
+        onImportClick={onImportClick}
+      />
+    </div>
+  );
+}
 
 export default function GestioneDocenti() {
     const [dialogMode, setDialogMode] = useState<DialogMode>(null);
@@ -24,78 +73,7 @@ export default function GestioneDocenti() {
         cognome: '',
         limite: 0,
     });
-    // Dati mock dei docenti - sostituisci con dati reali dal tuo stato/API
-    const data: Docenti[] = [
-        {
-            nome: "Mario",
-            cognome: "Rossi",
-            copieEffettuate: 10,
-            copieRimanenti: 90,
-            limite: 100,
-        },
-        {
-            nome: "Luigi",
-            cognome: "Bianchi",
-            copieEffettuate: 20,
-            copieRimanenti: 80,
-            limite: 100,
-        },
-        {
-            nome: "Giovanni",
-            cognome: "Verdi",
-            copieEffettuate: 30,
-            copieRimanenti: 70,
-            limite: 100,
-        },
-        {
-            nome: "Francesco",
-            cognome: "Neri",
-            copieEffettuate: 40,
-            copieRimanenti: 60,
-            limite: 100,
-        },
-        {
-            nome: "Matteo",
-            cognome: "Gialli",
-            copieEffettuate: 50,
-            copieRimanenti: 50,
-            limite: 100,
-        },
-        {
-            nome: "Davide",
-            cognome: "Rosi",
-            copieEffettuate: 60,
-            copieRimanenti: 40,
-            limite: 100,
-        },
-        {
-            nome: "Andrea",
-            cognome: "Gialli",
-            copieEffettuate: 70,
-            copieRimanenti: 30,
-            limite: 100,
-        },
-    ];
-
-    const columns = createColumnsDocenti({
-        onView: (docente) => {
-            setSelectedDocente(docente);
-            setDialogMode('view');
-        },
-        onEdit: (docente) => {
-            setSelectedDocente(docente);
-            setFormData({
-                nome: docente.nome,
-                cognome: docente.cognome,
-                limite: docente.limite,
-            });
-            setDialogMode('edit');
-        },
-        onDelete: (docente) => {
-            setSelectedDocente(docente);
-            setIsDeleteDialogOpen(true);
-        },
-    });
+    const [docentiQuery, setDocentiQuery] = useState<DocentiQuery>(defaultQuery);
 
     const handleOpenAddDialog = () => {
         setFormData({ nome: '', cognome: '', limite: 0 });
@@ -176,20 +154,34 @@ export default function GestioneDocenti() {
             <div className=" px-4">
                 
 
-                {/* Tabella dei docenti */}
-                <div className="w-full mt-4">
-                    <DataTable 
-                        columns={columns} 
-                        data={data}
-                        showAddButton={true}
-                        showImportButton={true}
+                {/* Tabella dei docenti: sospende fino al primo caricamento, poi mostra dati e isFetching per i refetch */}
+                <Suspense fallback={<div className="w-full mt-4 p-8 text-center text-muted-foreground">Caricamento docenti…</div>}>
+                    <GestioneDocentiContent
+                        query={docentiQuery}
+                        onView={(docente) => {
+                            setSelectedDocente(docente);
+                            setDialogMode('view');
+                        }}
+                        onEdit={(docente) => {
+                            setSelectedDocente(docente);
+                            setFormData({
+                                nome: docente.nome,
+                                cognome: docente.cognome,
+                                limite: docente.limite,
+                            });
+                            setDialogMode('edit');
+                        }}
+                        onDelete={(docente) => {
+                            setSelectedDocente(docente);
+                            setIsDeleteDialogOpen(true);
+                        }}
                         onAddClick={handleOpenAddDialog}
                         onImportClick={() => {
                             // TODO: Implementa la funzione per importare file
                             console.log("Importa file");
                         }}
                     />
-                </div>
+                </Suspense>
             </div>
 
             {/* Dialog unificato per Add/Edit/View */}

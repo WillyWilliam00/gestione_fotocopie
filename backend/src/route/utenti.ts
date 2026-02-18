@@ -1,7 +1,7 @@
 import express from 'express';
 import { asyncHandler } from '../middleware/auth.js';
 import type { Request, Response } from 'express';
-import { utentiQuerySchema, createUtenteSchema, uuidParamSchema, type UtentiQuery, type CreateUtente } from '../../../shared/validation.js';
+import { utentiQuerySchema, createUtenteSchema, modifyUtenteSchema, uuidParamSchema, type UtentiQuery, type CreateUtente, type ModifyUtente } from '../../../shared/validation.js';
 
 const router = express.Router();
 
@@ -50,8 +50,8 @@ router.put('/update-utente/:id', asyncHandler(async (req: Request, res: Response
     // Valida l'ID come UUID (stringa)
     const { id } = uuidParamSchema.parse(req.params);
 
-    const data = createUtenteSchema.parse(req.body);
-    const utenteAggiornato = await req.tenantStore.utenti.update(id, data);
+    const data = modifyUtenteSchema.parse(req.body);
+    const utenteAggiornato = await req.tenantStore.utenti.update(id, data as ModifyUtente);
     
     res.status(200).json({
         message: 'Utente aggiornato con successo',
