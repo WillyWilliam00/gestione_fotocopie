@@ -26,6 +26,15 @@ interface DataTableProps<TData, TValue> {
     onImportClick?: () => void;
     showAddButton?: boolean;
     showImportButton?: boolean;
+    onPageChange?: (page: number) => void;
+    pagination?: {
+        page: number;
+        pageSize: number;
+        totalItems: number;
+        totalPages: number;
+        hasNextPage: boolean;
+        hasPreviousPage: boolean;
+    };
 }
 
 export function DataTable<TData, TValue>({
@@ -36,6 +45,8 @@ export function DataTable<TData, TValue>({
     onImportClick,
     showAddButton = false,
     showImportButton = false,
+    onPageChange,
+    pagination,
 }: DataTableProps<TData, TValue>) {
     const [sorting, setSorting] = useState<SortingState>([])
     const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
@@ -53,7 +64,7 @@ export function DataTable<TData, TValue>({
         getCoreRowModel: getCoreRowModel(),
     })
     return (
-        <div className="p-4">
+        <div className="p-4 ">
           
                 <div className="flex flex-row gap-2 items-end justify-between">
                 <FieldGroup className="flex flex-row gap-2 max-w-xl">
@@ -163,6 +174,31 @@ export function DataTable<TData, TValue>({
                     </TableBody>
                 </Table>
             </div>
+            {pagination && onPageChange && (
+        <div className="flex items-center justify-between mt-2 text-sm text-muted-foreground">
+          <span>
+            Pagina {pagination.page} di {pagination.totalPages} ({pagination.totalItems} {tableType === 'docenti' ? 'docenti' : 'utenze'})
+          </span>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!pagination.hasPreviousPage}
+              onClick={() => onPageChange(pagination.page - 1)}
+            >
+              Precedente
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={!pagination.hasNextPage}
+              onClick={() => onPageChange(pagination.page + 1)}
+            >
+              Successiva
+            </Button>
+          </div>
+        </div>
+      )}
         </div>
     )
 }
