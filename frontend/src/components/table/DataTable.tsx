@@ -16,6 +16,15 @@ import { File, Plus, SearchIcon, FileIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Field, FieldGroup, FieldLabel } from "../ui/field";
 import { Button } from "../ui/button";
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+    PaginationEllipsis,
+} from "../ui/pagination";
 import { cn } from "@/lib/utils";
 
 interface DataTableProps<TData, TValue> {
@@ -67,31 +76,33 @@ export function DataTable<TData, TValue>({
         <div className="p-4 ">
           
                 <div className="flex flex-row gap-2 items-end justify-between">
-                <FieldGroup className="flex flex-row gap-2 max-w-xl">
-                    <Field className="flex-1">
-                        <FieldLabel htmlFor="nome-input">Cerca {tableType === 'docenti' ? 'docente' : 'utenza'} per nome...</FieldLabel>
-                        <InputGroup>
-                            <InputGroupInput id="nome-input" value={(table.getColumn("nome")?.getFilterValue() as string) ?? ""} onChange={(event) =>
-                                table.getColumn("nome")?.setFilterValue(event.target.value)
-                            } placeholder="Marco..." />
-                            <InputGroupAddon align="inline-start">
-                                <HugeiconsIcon icon={SearchIcon} strokeWidth={2} className="size-4" />
-                            </InputGroupAddon>
-                        </InputGroup>
-                    </Field>
-                    <Field className="flex-1">
-                        <FieldLabel htmlFor="cognome-input">Cerca {tableType === 'docenti' ? 'docente' : 'utenza'} per cognome...</FieldLabel>
-                        <InputGroup>
-                            <InputGroupInput id="cognome-input" value={(table.getColumn("cognome")?.getFilterValue() as string) ?? ""} onChange={(event) =>
-                                table.getColumn("cognome")?.setFilterValue(event.target.value)
-                            } placeholder="Rossi..." />
-                            <InputGroupAddon align="inline-start">
-                                <HugeiconsIcon icon={SearchIcon} strokeWidth={2} className="size-4" />
-                            </InputGroupAddon>
-                        </InputGroup>
-                    </Field>
-                </FieldGroup>
-                <div className="flex flex-row gap-2">
+                {tableType === "docenti" && (
+                    <FieldGroup className="flex flex-row gap-2 max-w-xl">
+                        <Field className="flex-1">
+                            <FieldLabel htmlFor="nome-input">Cerca docente per nome...</FieldLabel>
+                            <InputGroup>
+                                <InputGroupInput id="nome-input" value={(table.getColumn("nome")?.getFilterValue() as string) ?? ""} onChange={(event) =>
+                                    table.getColumn("nome")?.setFilterValue(event.target.value)
+                                } placeholder="Marco..." />
+                                <InputGroupAddon align="inline-start">
+                                    <HugeiconsIcon icon={SearchIcon} strokeWidth={2} className="size-4" />
+                                </InputGroupAddon>
+                            </InputGroup>
+                        </Field>
+                        <Field className="flex-1">
+                            <FieldLabel htmlFor="cognome-input">Cerca docente per cognome...</FieldLabel>
+                            <InputGroup>
+                                <InputGroupInput id="cognome-input" value={(table.getColumn("cognome")?.getFilterValue() as string) ?? ""} onChange={(event) =>
+                                    table.getColumn("cognome")?.setFilterValue(event.target.value)
+                                } placeholder="Rossi..." />
+                                <InputGroupAddon align="inline-start">
+                                    <HugeiconsIcon icon={SearchIcon} strokeWidth={2} className="size-4" />
+                                </InputGroupAddon>
+                            </InputGroup>
+                        </Field>
+                    </FieldGroup>
+                )}
+                <div className={cn("flex flex-row gap-2", tableType === "utenze" && "ml-auto")}>
                     {showAddButton && onAddClick && tableType === 'docenti' && (
                         <Button className="mt-4" variant="default" onClick={onAddClick}>
                             Aggiungi docente
@@ -175,28 +186,61 @@ export function DataTable<TData, TValue>({
                 </Table>
             </div>
             {pagination && onPageChange && (
-        <div className="flex items-center justify-between mt-2 text-sm text-muted-foreground">
-          <span>
-            Pagina {pagination.page} di {pagination.totalPages} ({pagination.totalItems} {tableType === 'docenti' ? 'docenti' : 'utenze'})
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 text-sm text-muted-foreground">
+          <span className="w-full">
+            Pagina {pagination.page} di {pagination.totalPages} ({pagination.totalItems} {tableType === "docenti" ? "docenti" : "utenze"})
           </span>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!pagination.hasPreviousPage}
-              onClick={() => onPageChange(pagination.page - 1)}
-            >
-              Precedente
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              disabled={!pagination.hasNextPage}
-              onClick={() => onPageChange(pagination.page + 1)}
-            >
-              Successiva
-            </Button>
-          </div>
+          <Pagination>
+            <PaginationContent>
+              <PaginationItem>
+                <PaginationPrevious
+                  onClick={() => pagination.hasPreviousPage && onPageChange(pagination.page - 1)}
+                  aria-disabled={!pagination.hasPreviousPage}
+                  className={cn(!pagination.hasPreviousPage && "pointer-events-none opacity-50")}
+                  text="Precedente"
+                />
+              </PaginationItem>
+              {(() => {
+                const { page, totalPages } = pagination;
+                const pages: (number | "ellipsis")[] = [];
+                if (totalPages <= 7) {
+                  for (let i = 1; i <= totalPages; i++) pages.push(i);
+                } else {
+                  pages.push(1);
+                  if (page > 3) pages.push("ellipsis");
+                  for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) {
+                    if (!pages.includes(i)) pages.push(i);
+                  }
+                  if (page < totalPages - 2) pages.push("ellipsis");
+                  if (totalPages > 1) pages.push(totalPages);
+                }
+                return pages.map((p, i) =>
+                  p === "ellipsis" ? (
+                    <PaginationItem key={`ellipsis-${i}`}>
+                      <PaginationEllipsis />
+                    </PaginationItem>
+                  ) : (
+                    <PaginationItem key={p}>
+                      <PaginationLink
+                        isActive={p === page}
+                        onClick={() => onPageChange(p)}
+                      >
+                        {p}
+                      </PaginationLink>
+                    </PaginationItem>
+                  )
+                );
+              })()}
+              <PaginationItem>
+                <PaginationNext
+                  onClick={() => pagination.hasNextPage && onPageChange(pagination.page + 1)}
+                  aria-disabled={!pagination.hasNextPage}
+                  className={cn(!pagination.hasNextPage && "pointer-events-none opacity-50")}
+                  text="Successiva"
+                />
+              </PaginationItem>
+            </PaginationContent>
+          </Pagination>
         </div>
       )}
         </div>
