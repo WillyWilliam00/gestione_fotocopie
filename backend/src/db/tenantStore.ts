@@ -164,9 +164,11 @@ export const createTenantStore = (istitutoId: number, db: DbInstance | Transacti
                 const isEmail = identifier ? isEmailIdentifier(identifier) : false;
 
                 const condition = [eq(utenti.istitutoId, istitutoId)];
-                if(isEmail) condition.push(ilike(utenti.email, `%${identifier}%`));
-                if(!isEmail) condition.push(ilike(utenti.username, `%${identifier}%`));
-                if(ruolo) condition.push(eq(utenti.ruolo, ruolo));
+                if (identifier) {
+                    if (isEmail) condition.push(ilike(utenti.email, `%${identifier}%`));
+                    else condition.push(ilike(utenti.username, `%${identifier}%`));
+                }
+                if (ruolo) condition.push(eq(utenti.ruolo, ruolo));
 
                 const sortMap: Record<UtentiSort['field'], AnyColumn | SQL> = {
                     username: utenti.username,

@@ -9,7 +9,8 @@ import utentiRoutes from './route/utenti.js';
 import registrazioniCopieRoutes from './route/registrazioniCopie.js';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+// Porta del backend: default 3001 per evitare conflitto con frontend Vite su 3000
+const PORT = process.env.PORT || 3001;
 
 app.use(cors());
 app.use(express.json());
