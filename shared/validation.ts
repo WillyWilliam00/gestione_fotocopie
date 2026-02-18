@@ -63,8 +63,19 @@ export const modifyUtenteSchema = z.discriminatedUnion('ruolo', [
 
 // --- Login (un campo identificativo: email o username) ---
 export const loginSchema = z.object({
-  identifier: z.string().min(1, 'Inserisci email o username'),
-  password: z.string().min(1, 'La password è obbligatoria'),
+  identifier: z.string()
+    .min(1, 'Inserisci email o username')
+    .refine((val) => {
+      // Se NON c'è una @, la validazione passa (è un username)
+      if (!val.includes('@')) return true;
+      
+      // Se C'È una @, usiamo lo schema email di Zod per validarlo
+      return z.email().safeParse(val).success;
+    }, {
+      message: 'Inserisci un indirizzo email valido',
+    }),
+  password: z.string()
+  .min(8, 'La password deve essere di almeno 8 caratteri'),
 });
 
 // --- Registrazione copie ---
@@ -75,8 +86,49 @@ export const insertRegistrazioneSchema = z.object({
   note: z.string().optional(),
 });
 
+/**
+ * Schema per il form di registrazione copie (solo i campi inseriti dall'utente)
+ * Usato con TanStack Form nel componente frontend
+ * I valori sono stringhe nel form, quindi validiamo come stringhe e convertiamo dopo
+ */
+export const createRegistrazioneFormSchema = (limiteCopie: number, copieRimanenti: number) => {
+  return z.object({
+    copie: z.string()
+      .min(1, 'Inserisci un numero di copie')
+      .refine(
+        (val) => {
+          const num = Number(val);
+          return !Number.isNaN(num) && Number.isInteger(num);
+        },
+        { message: 'Inserisci un numero intero valido' }
+      )
+      .refine(
+        (val) => {
+          const num = Number(val);
+          return num >= 1;
+        },
+        { message: 'Le copie devono essere almeno 1' }
+      )
+      .refine(
+        (val) => {
+          const num = Number(val);
+          return num <= limiteCopie;
+        },
+        { message: `Le copie non possono superare il limite (${limiteCopie})` }
+      )
+      .refine(
+        (val) => {
+          const num = Number(val);
+          return num <= copieRimanenti;
+        },
+        { message: `Le copie non possono superare il numero di copie rimaste (${copieRimanenti})` }
+      ),
+    note: z.string(), // Sempre stringa nel form (può essere vuota)
+  });
+};
+
 export const docentiQuerySchema = z.object({
-  page: z.coerce.number().int().positive().catch(1).default(1),
+  page: z.coerce.number().int().positive().min(1).catch(1).default(1),
   pageSize: z.coerce.number().int().positive().max(100).catch(20).default(20),
   nome: z.string().optional(),
   cognome: z.string().optional(),
@@ -95,8 +147,7 @@ export const registrazioniCopieQuerySchema = z.object({
 export const utentiQuerySchema = z.object({
   page: z.coerce.number().int().positive().catch(1).default(1),
   pageSize: z.coerce.number().int().positive().max(100).catch(20).default(20),
-  username: z.string().optional(),
-  email: z.string().optional(),
+  identifier: z.string().min(1, 'Inserisci email o username').optional(),
   ruolo: z.enum(['admin', 'collaboratore']).optional(),
   sortField: z.enum(['username', 'email', 'ruolo']).optional(),
   sortOrder: z.enum(['asc', 'desc']).optional().default('asc'),
