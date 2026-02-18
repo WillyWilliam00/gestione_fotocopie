@@ -15,6 +15,7 @@ import type { RegistrazioniCopieQuery, InsertRegistrazione } from '../../../shar
  * - GET /api/registrazioni-copie?page=1&pageSize=20&...
  * - POST /api/registrazioni-copie/new-registrazione
  * - DELETE /api/registrazioni-copie/delete-registrazione/:id
+ * - DELETE /api/registrazioni-copie/delete-all
  */
 
 /**
@@ -90,6 +91,29 @@ export function useDeleteRegistrazione() {
       // Invalida la cache delle registrazioni per forzare il refetch
       queryClient.invalidateQueries({ queryKey: ['registrazioni'] });
       // Invalida anche la cache dei docenti perché le copie effettuate cambiano
+      queryClient.invalidateQueries({ queryKey: ['docenti'] });
+    },
+  });
+}
+
+/**
+ * Hook per eliminare tutte le registrazioni copie dell'istituto (reset conteggio).
+ * Stati: isPending = true durante la delete → disabilita pulsante / conferma
+ *
+ * @returns Mutation con mutate, mutateAsync, isPending, error, ecc.
+ */
+export function useDeleteAllRegistrazioni() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await api.delete<{ message: string }>(
+        '/registrazioni-copie/delete-all'
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['registrazioni'] });
       queryClient.invalidateQueries({ queryKey: ['docenti'] });
     },
   });

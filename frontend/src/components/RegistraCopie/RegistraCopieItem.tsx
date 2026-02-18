@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/dialog";
 import { useCreateRegistrazione } from "@/hooks/use-registrazioni.js";
 import { useAuthStore } from "@/store/auth-store.js";
-import { createRegistrazioneFormSchema } from "../../../shared/validation.js";
-import type { DocenteConRegistrazioni } from "../../../shared/types.js";
+import { createRegistrazioneFormSchema } from "../../../../shared/validation.js";
+import type { DocenteConRegistrazioni } from "../../../../shared/types.js";
 import { cn } from "@/lib/utils.js";
 
 export interface RegistraCopieItemProps {
@@ -36,7 +36,7 @@ export default function RegistraCopieItem({
   const utenteId = useAuthStore((s) => s.utente?.id);
   const [serverError, setServerError] = useState<string | null>(null);
   const isOverRegistrazioni = docente.copieRimanenti === 0;
-  const missing10Copies = (docente.limiteCopie - docente.copieEffettuate) <= 10;
+  const missing5Percent = Math.max(1, (docente.limiteCopie * 0.05)) >= docente.copieRimanenti;
 
   // Schema Zod per il form con i limiti dinamici del docente
   const formSchema = useMemo(
@@ -93,28 +93,28 @@ export default function RegistraCopieItem({
       <DialogTrigger asChild>
         <button
           type="button"
-          className="cursor-pointer w-full text-left"
+          className="cursor-pointer w-full h-full text-left"
           disabled={isOverRegistrazioni}
         >
           <Item
             variant="outline"
             className={cn(
-              "hover:bg-muted transition-all duration-200 ease-linear",
+              "h-full hover:bg-muted transition-all duration-200 ease-linear",
               isSelected && "ring-2 ring-primary",
               isOverRegistrazioni && "opacity-50 bg-red-200/50 cursor-not-allowed hover:bg-red-200/50 border-red-500",
-              missing10Copies && !isOverRegistrazioni && "bg-yellow-100/50 hover:bg-yellow-200/50 border-yellow-500"
+              missing5Percent && !isOverRegistrazioni && "bg-yellow-100/50 hover:bg-yellow-200/50 border-yellow-500"
             )}
           >
             <ItemContent>
-              <ItemTitle className={cn(missing10Copies && !isOverRegistrazioni && "text-yellow-500" , isOverRegistrazioni && "text-red-500")}>
+              <ItemTitle className={cn(missing5Percent && !isOverRegistrazioni && "text-yellow-500" , isOverRegistrazioni && "text-red-500", 'md:text-lg ')}>
                 {docente.nome} {docente.cognome}
               </ItemTitle>
-              <ItemDescription className={cn(missing10Copies && !isOverRegistrazioni && "text-yellow-500" , isOverRegistrazioni && "text-red-500")}>
+              <ItemDescription className={cn(missing5Percent && !isOverRegistrazioni && "text-yellow-500" , isOverRegistrazioni && "text-red-500", 'md:text-base ')}>
                 Copie: {docente.copieEffettuate}/{docente.limiteCopie}
               </ItemDescription>
             </ItemContent>
             <ItemContent>
-              <ItemDescription className={cn("text-sm", isOverRegistrazioni && "text-red-500", missing10Copies && !isOverRegistrazioni && "text-yellow-500")}>
+              <ItemDescription className={cn("md:text-base text-sm", isOverRegistrazioni && "text-red-500", missing5Percent && !isOverRegistrazioni && "text-yellow-500")}>
                 Copie Rimanenti: {docente.copieRimanenti}
               </ItemDescription>
             </ItemContent>

@@ -1,10 +1,10 @@
 import { useRef, useEffect, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
-import RegistraCopieItem from "../RegistraCopieItem";
+import RegistraCopieItem from "./RegistraCopieItem.js";
 import { useDocentiInfinite } from "@/hooks/use-docenti.js";
 import type { DocenteConRegistrazioni } from "../../../../shared/types.js";
 
-const ROW_HEIGHT_ESTIMATE = 120;
+const ROW_HEIGHT_ESTIMATE = 90;
 const OVERSCAN = 5;
 const FETCH_NEXT_THRESHOLD = 5;
 
@@ -52,7 +52,7 @@ export default function RegistraCopieContent({
     <div className="flex flex-col max-w-xl md:max-w-2xl lg:max-w-6xl xl:max-w-7xl 2xl:max-w-[1600px] w-full mt-4">
       <div
         ref={parentRef}
-        className="w-full h-[calc(100vh-250px)] overflow-auto rounded-lg border p-6"
+        className="w-full h-[calc(100vh-430px)] md:h-[calc(100vh-270px)] overflow-auto rounded-lg border p-6"
       >
         <div
           style={{
@@ -74,7 +74,8 @@ export default function RegistraCopieContent({
                   left: 0,
                   width: "100%",
                   transform: `translateY(${virtualRow.start}px)`,
-                  padding: "0 1rem",
+                  padding: "4px 1rem",
+                  height: `${ROW_HEIGHT_ESTIMATE}px`,
                 }}
               >
                 <RegistraCopieItem

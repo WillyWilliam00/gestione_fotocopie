@@ -39,27 +39,29 @@ export default function RegistraCopie() {
       <HeaderSection title="Registra Fotocopie" icon={CameraIcon} />
       <div className="flex flex-col gap-2 items-center justify-center mt-9">
         <div className="flex flex-col max-w-xl w-full gap-2 px-4 sm:flex-row sm:gap-4">
-          <InputGroup>
+          <InputGroup className="h-full">
             <InputGroupInput
               placeholder="Cerca per nome..."
               value={searchNome}
+              className="md:text-base text-sm "
               onChange={(e) => setSearchNome(e.target.value)}
             />
             <InputGroupAddon>
               <HugeiconsIcon icon={SearchIcon} strokeWidth={2} />
             </InputGroupAddon>
           </InputGroup>
-          <InputGroup>
+          <InputGroup className="h-full">
             <InputGroupInput
               placeholder="Cerca per cognome..."
               value={searchCognome}
+              className="md:text-base text-sm"
               onChange={(e) => setSearchCognome(e.target.value)}
             />
             <InputGroupAddon>
               <HugeiconsIcon icon={SearchIcon} strokeWidth={2} />
             </InputGroupAddon>
           </InputGroup>
-          <Button variant="outline" onClick={handleReset} disabled={searchNome === "" && searchCognome === ""}>
+          <Button className=" text-base"  variant="outline" onClick={handleReset} disabled={searchNome === "" && searchCognome === ""}>
             <HugeiconsIcon icon={ArrowLeftIcon} strokeWidth={2} />
             Resetta 
           </Button>
