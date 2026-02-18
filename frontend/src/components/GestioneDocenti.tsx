@@ -10,12 +10,14 @@ import { Field, FieldLabel, FieldContent } from "@/components/ui/field";
 import { DataTable } from "./table/DataTable";
 import { createColumnsDocenti, type Docenti } from "./table/columns";
 import { useState, Suspense } from "react";
-import { useDocentiSuspense } from "@/hooks/use-docenti";
-import type { DocentiQuery } from "../../../shared/validation.js";
+import { useForm } from "@tanstack/react-form";
+import { AxiosError } from "axios";
+import { useCreateDocente, useDocentiSuspense } from "@/hooks/use-docenti";
+import { insertDocenteFormSchema, type DocentiQuery } from "../../../shared/validation.js";
 
 type DialogMode = 'add' | 'edit' | 'view' | null;
 
-const defaultQuery: DocentiQuery = { page: 1, pageSize: 20, sortOrder: 'asc' };
+const defaultQuery: DocentiQuery = { page: 1, pageSize: 10, sortOrder: 'desc', sortField: 'createdAt' };
 
 /** Contenuto che sospende fino al caricamento dei docenti; da usare dentro <Suspense>. */
 function GestioneDocentiContent({
@@ -25,6 +27,7 @@ function GestioneDocentiContent({
   onDelete,
   onAddClick,
   onImportClick,
+  onPageChange,
 }: {
   query: DocentiQuery;
   onView: (docente: Docenti) => void;
@@ -32,6 +35,7 @@ function GestioneDocentiContent({
   onDelete: (docente: Docenti) => void;
   onAddClick: () => void;
   onImportClick: () => void;
+  onPageChange: (page: number) => void;
 }) {
   const { data, isFetching } = useDocentiSuspense(query);
   const columns = createColumnsDocenti({ onView, onEdit, onDelete });
@@ -57,6 +61,8 @@ function GestioneDocentiContent({
         showImportButton={true}
         onAddClick={onAddClick}
         onImportClick={onImportClick}
+        pagination={data.pagination}
+        onPageChange={onPageChange}
       />
     </div>
   );
@@ -66,35 +72,59 @@ export default function GestioneDocenti() {
     const [dialogMode, setDialogMode] = useState<DialogMode>(null);
     const [selectedDocente, setSelectedDocente] = useState<Docenti | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-    
-    // Form state per Add/Edit
-    const [formData, setFormData] = useState<Pick<Docenti, 'nome' | 'cognome' | 'limite'>>({
-        nome: '',
-        cognome: '',
-        limite: 0,
-    });
+    const { mutate: createDocente, isPending: isCreating, isError, error, reset: resetMutation } = useCreateDocente();
     const [docentiQuery, setDocentiQuery] = useState<DocentiQuery>(defaultQuery);
 
+    const handlePageChange = (page: number) => {
+        setDocentiQuery((prevQuery) => ({
+            ...prevQuery,
+            page,
+        }));
+    };
+
+    // TanStack Form con validazione Zod
+    const form = useForm({
+        defaultValues: {
+            nome: '',
+            cognome: '',
+            limiteCopie: '',
+        },
+        validators: {
+            onChange: insertDocenteFormSchema,
+        },
+        onSubmit: async ({ value }) => {
+            if (dialogMode === 'add') {
+                createDocente(
+                    {
+                        nome: value.nome,
+                        cognome: value.cognome,
+                        limiteCopie: Number(value.limiteCopie),
+                    },
+                    {
+                        onSuccess: () => {
+                            handleCloseDialog();
+                        },
+                    }
+                );
+            } else if (dialogMode === 'edit' && selectedDocente) {
+                // TODO: collega update docente
+                console.log("Salva modifiche docente:", { ...selectedDocente, ...value });
+                handleCloseDialog();
+            }
+        },
+    });
+
     const handleOpenAddDialog = () => {
-        setFormData({ nome: '', cognome: '', limite: 0 });
+        form.reset();
+        resetMutation(); // Reset dello stato della mutation per pulire eventuali errori residui
         setDialogMode('add');
     };
 
     const handleCloseDialog = () => {
         setDialogMode(null);
         setSelectedDocente(null);
-        setFormData({ nome: '', cognome: '', limite: 0 });
-    };
-
-    const handleSaveDocente = () => {
-        if (dialogMode === 'add') {
-            // TODO: Aggiungi nuovo docente
-            console.log("Aggiungi docente:", formData);
-        } else if (dialogMode === 'edit' && selectedDocente) {
-            // TODO: Aggiorna docente esistente
-            console.log("Salva modifiche docente:", { ...selectedDocente, ...formData });
-        }
-        handleCloseDialog();
+        // Non serve form.reset() qui: viene chiamato quando riapriamo il dialog
+        // Non serve resetMutation qui: TanStack Query resetta automaticamente lo stato alla prossima mutation
     };
 
     return (
@@ -151,7 +181,7 @@ export default function GestioneDocenti() {
             </div>
             <HeaderSection title="Gestione Docenti" icon={FileIcon} />
 
-            <div className=" px-4">
+            <div className=" px-4 ">
                 
 
                 {/* Tabella dei docenti: sospende fino al primo caricamento, poi mostra dati e isFetching per i refetch */}
@@ -164,11 +194,10 @@ export default function GestioneDocenti() {
                         }}
                         onEdit={(docente) => {
                             setSelectedDocente(docente);
-                            setFormData({
-                                nome: docente.nome,
-                                cognome: docente.cognome,
-                                limite: docente.limite,
-                            });
+                            resetMutation(); // Reset dello stato della mutation quando si apre edit
+                            form.setFieldValue('nome', docente.nome);
+                            form.setFieldValue('cognome', docente.cognome);
+                            form.setFieldValue('limiteCopie', String(docente.limite));
                             setDialogMode('edit');
                         }}
                         onDelete={(docente) => {
@@ -180,6 +209,7 @@ export default function GestioneDocenti() {
                             // TODO: Implementa la funzione per importare file
                             console.log("Importa file");
                         }}
+                        onPageChange={handlePageChange}
                     />
                 </Suspense>
             </div>
@@ -199,61 +229,170 @@ export default function GestioneDocenti() {
                             {dialogMode === 'view' && 'Visualizza i dettagli del docente.'}
                         </DialogDescription>
                     </DialogHeader>
-                    <div className="space-y-4 py-4">
-                        <Field>
-                            <FieldLabel htmlFor="nome-docente">Nome</FieldLabel>
-                            <FieldContent>
-                                <Input 
-                                    id="nome-docente" 
-                                    placeholder="Inserisci il nome del docente"
-                                    required={dialogMode !== 'view'}
-                                    disabled={dialogMode === 'view'}
-                                    value={dialogMode === 'view' ? selectedDocente?.nome ?? '' : formData.nome}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
+                    {dialogMode === 'view' ? (
+                        <>
+                            <div className="space-y-4 py-4">
+                                <Field>
+                                    <FieldLabel htmlFor="nome-docente">Nome</FieldLabel>
+                                    <FieldContent>
+                                        <Input 
+                                            id="nome-docente" 
+                                            value={selectedDocente?.nome ?? ''}
+                                            disabled
+                                        />
+                                    </FieldContent>
+                                </Field>
+                                <Field>
+                                    <FieldLabel htmlFor="cognome-docente">Cognome</FieldLabel>
+                                    <FieldContent>
+                                        <Input 
+                                            id="cognome-docente" 
+                                            value={selectedDocente?.cognome ?? ''}
+                                            disabled
+                                        />
+                                    </FieldContent>
+                                </Field>
+                                <Field>
+                                    <FieldLabel htmlFor="numero-copie">Numero di copie</FieldLabel>
+                                    <FieldContent>
+                                        <Input 
+                                            id="numero-copie" 
+                                            type="number"
+                                            value={selectedDocente?.limite ?? 0}
+                                            disabled
+                                        />
+                                    </FieldContent>
+                                </Field>
+                            </div>
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button variant="outline" onClick={handleCloseDialog}>
+                                        Chiudi
+                                    </Button>
+                                </DialogClose>
+                            </DialogFooter>
+                        </>
+                    ) : (
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                form.handleSubmit();
+                            }}
+                        >
+                            <div className="space-y-4 py-4">
+                                <form.Field
+                                    name="nome"
+                                    children={(field) => (
+                                        <Field>
+                                            <FieldLabel htmlFor="nome-docente">Nome</FieldLabel>
+                                            <FieldContent>
+                                                <Input 
+                                                    id="nome-docente" 
+                                                    placeholder="Inserisci il nome del docente"
+                                                    required
+                                                    disabled={isCreating}
+                                                    value={field.state.value}
+                                                    onChange={(e) => field.handleChange(e.target.value)}
+                                                    onBlur={field.handleBlur}
+                                                />
+                                                {field.state.meta.errors.length > 0 && (
+                                                    <p className="text-sm text-destructive mt-1">
+                                                        {typeof field.state.meta.errors[0] === 'string' 
+                                                            ? field.state.meta.errors[0]
+                                                            : field.state.meta.errors[0]?.message ?? 'Errore di validazione'}
+                                                    </p>
+                                                )}
+                                            </FieldContent>
+                                        </Field>
+                                    )}
                                 />
-                            </FieldContent>
-                        </Field>
-                        <Field>
-                            <FieldLabel htmlFor="cognome-docente">Cognome</FieldLabel>
-                            <FieldContent>
-                                <Input 
-                                    id="cognome-docente" 
-                                    placeholder="Inserisci il cognome del docente"
-                                    required={dialogMode !== 'view'}
-                                    disabled={dialogMode === 'view'}
-                                    value={dialogMode === 'view' ? selectedDocente?.cognome ?? '' : formData.cognome}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, cognome: e.target.value }))}
+                                <form.Field
+                                    name="cognome"
+                                    children={(field) => (
+                                        <Field>
+                                            <FieldLabel htmlFor="cognome-docente">Cognome</FieldLabel>
+                                            <FieldContent>
+                                                <Input 
+                                                    id="cognome-docente" 
+                                                    placeholder="Inserisci il cognome del docente"
+                                                    required
+                                                    disabled={isCreating}
+                                                    value={field.state.value}
+                                                    onChange={(e) => field.handleChange(e.target.value)}
+                                                    onBlur={field.handleBlur}
+                                                />
+                                                {field.state.meta.errors.length > 0 && (
+                                                    <p className="text-sm text-destructive mt-1">
+                                                        {typeof field.state.meta.errors[0] === 'string' 
+                                                            ? field.state.meta.errors[0]
+                                                            : field.state.meta.errors[0]?.message ?? 'Errore di validazione'}
+                                                    </p>
+                                                )}
+                                            </FieldContent>
+                                        </Field>
+                                    )}
                                 />
-                            </FieldContent>
-                        </Field>
-                        <Field>
-                            <FieldLabel htmlFor="numero-copie">Numero di copie</FieldLabel>
-                            <FieldContent>
-                                <Input 
-                                    id="numero-copie" 
-                                    type="number"
-                                    placeholder="Inserisci il limite di fotocopie"
-                                    min="0"
-                                    required={dialogMode !== 'view'}
-                                    disabled={dialogMode === 'view'}
-                                    value={dialogMode === 'view' ? selectedDocente?.limite ?? 0 : formData.limite}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, limite: Number(e.target.value) }))}
+                                <form.Field
+                                    name="limiteCopie"
+                                    children={(field) => (
+                                        <Field>
+                                            <FieldLabel htmlFor="numero-copie">Numero di copie</FieldLabel>
+                                            <FieldContent>
+                                                <Input 
+                                                    id="numero-copie" 
+                                                    type="number"
+                                                    placeholder="Inserisci il limite di fotocopie"
+                                                    min="0"
+                                                    required
+                                                    disabled={isCreating}
+                                                    value={field.state.value}
+                                                    onChange={(e) => field.handleChange(e.target.value)}
+                                                    onBlur={field.handleBlur}
+                                                />
+                                                {field.state.meta.errors.length > 0 && (
+                                                    <p className="text-sm text-destructive mt-1">
+                                                        {typeof field.state.meta.errors[0] === 'string' 
+                                                            ? field.state.meta.errors[0]
+                                                            : field.state.meta.errors[0]?.message ?? 'Errore di validazione'}
+                                                    </p>
+                                                )}
+                                            </FieldContent>
+                                        </Field>
+                                    )}
                                 />
-                            </FieldContent>
-                        </Field>
-                    </div>
-                    <DialogFooter>
-                        <DialogClose asChild>
-                            <Button variant="outline" onClick={handleCloseDialog}>
-                                {dialogMode === 'view' ? 'Chiudi' : 'Annulla'}
-                            </Button>
-                        </DialogClose>
-                        {dialogMode !== 'view' && (
-                            <Button variant="default" onClick={handleSaveDocente}>
-                                {dialogMode === 'add' ? 'Aggiungi' : 'Salva'}
-                            </Button>
-                        )}
-                    </DialogFooter>
+                            </div>
+                            {isError && error && (
+                                <div className="my-4 p-3 bg-destructive/10 border border-destructive/20 rounded-md">
+                                    <p className="text-sm text-destructive">
+                                        {error instanceof AxiosError 
+                                            ? (error.response?.data?.error || error.message || 'Errore durante il salvataggio')
+                                            : (error instanceof Error 
+                                                ? error.message 
+                                                : 'Errore durante il salvataggio. Riprova più tardi.')}
+                                    </p>
+                                </div>
+                            )}
+                            <DialogFooter>
+                                <DialogClose asChild>
+                                    <Button variant="outline" onClick={handleCloseDialog} type="button">
+                                        Annulla
+                                    </Button>
+                                </DialogClose>
+                                <Button
+                                    variant="default"
+                                    type="submit"
+                                    disabled={isCreating || !form.state.isValid}
+                                >
+                                    {dialogMode === 'add'
+                                        ? isCreating
+                                            ? 'Aggiunta in corso…'
+                                            : 'Aggiungi'
+                                        : 'Salva'}
+                                </Button>
+                            </DialogFooter>
+                        </form>
+                    )}
                 </DialogContent>
             </Dialog>
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
