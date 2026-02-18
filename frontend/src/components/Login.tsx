@@ -1,94 +1,180 @@
+import { useForm } from '@tanstack/react-form';
+import { loginSchema } from '../../../shared/validation.js';
 import { Field, FieldContent, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { CameraIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import Footer from "./Footer";
+import { login } from "@/lib/auth-api.js";
+import { AxiosError } from "axios";
+import { useState } from "react";
+
+/**
+ * Componente Login con validazione Zod e integrazione auth-store
+ * 
+ * Spiegazione:
+ * - Usa TanStack Form per gestione form state
+ * - Valida manualmente con Zod prima di inviare (evita chiamate API con dati invalidi)
+ * - Mostra errori specifici per ogni campo (es. "Password deve essere almeno 8 caratteri")
+ * - Chiama auth-api.login() che salva automaticamente nello store Zustand
+ * - Dopo login riuscito, redirect a / (route protetta)
+ */
 export default function Login() {
-    const navigate = useNavigate()
-    const [formData, setFormData] = useState({
-        nome: '',
-        cognome: '',
-        password: '',
-    });
+  const navigate = useNavigate();
+  const location = useLocation();
+  const [serverError, setServerError] = useState<string | null>(null);
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        // Qui puoi aggiungere la logica di autenticazione
-        console.log('Dati login:', formData);
-        navigate('/')
-    };
+  // Messaggio di successo da Register (se presente)
+  const successMessage = location.state?.message;
 
-    return (
-        <div className="min-h-screen flex items-center justify-center bg-primary ">
-            <div className="bg-secondary rounded-lg p-6 w-full max-w-xl">
-                <div className="flex items-center justify-center w-20 h-20 rounded-full bg-primary p-2 mx-auto">
-                    <HugeiconsIcon icon={CameraIcon} strokeWidth={2} className="text-secondary w-12 h-12" />
-                </div>
-                <h1 className="text-2xl font-semibold text-primary text-center mt-4">Registro Copie Scolastico</h1>
-                <h3 className="text-sm text-center text-muted-foreground">Accesso Riservato</h3>
+  const form = useForm({
+    defaultValues: {
+      identifier: '',
+      password: '',
+    },
+    validators: {
+      onChange: loginSchema,
+    },
+    onSubmit: async ({ value }) => {
+      setServerError(null); // Reset errore server prima di ogni submit
 
-                <form onSubmit={handleSubmit} className="mt-6">
-                    <FieldGroup className="">
-                        <Field>
-                            <FieldLabel htmlFor="nome">Nome</FieldLabel>
-                            <FieldContent>
-                                <Input
-                                    id="nome"
-                                    type="text"
-                                    placeholder="Inserisci il tuo nome"
-                                    required
-                                    className="rounded-none h-12"
-                                    value={formData.nome}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, nome: e.target.value }))}
-                                />
-                            </FieldContent>
-                        </Field>
+      try {
+        // Chiama API login
+        await login(value.identifier, value.password);
 
-                        <Field>
-                            <FieldLabel htmlFor="cognome">Cognome</FieldLabel>
-                            <FieldContent>
-                                <Input
-                                    id="cognome"
-                                    type="text"
-                                    placeholder="Inserisci il tuo cognome"
-                                    required
-                                    className="rounded-none h-12"
-                                    value={formData.cognome}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, cognome: e.target.value }))}
-                                />
-                            </FieldContent>
-                        </Field>
 
-                        <Field>
-                            <FieldLabel htmlFor="password">Password</FieldLabel>
-                            <FieldContent>
-                                <Input
-                                    id="password"
-                                    type="password"
-                                    placeholder="Inserisci la password"
-                                    required
-                                    className="rounded-none h-12"
-                                    value={formData.password}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                                />
-                            </FieldContent>
-                        </Field>
+        // Login riuscito, redirect a home
+        navigate('/');
+      } catch (err: unknown) {
+        console.log('errore', err);
+        // Gestiamo solo gli errori dal server (AxiosError)
+        // Gli errori Zod sono gestiti automaticamente dal form con validators
+        if (err instanceof AxiosError) {
+          const errorMessage = err.response?.data?.error || err.message || 'Errore durante il login';
+          setServerError(errorMessage);
+        } else {
+          // Errore generico non previsto
+          setServerError('Errore durante il login. Riprova più tardi.');
+        }
+      }
+    },
+  });
 
-                        <div className="pt-2">
-                            <Button type="submit" className="w-full rounded-none " size="lg" variant="default">
-                                Accedi
-                            </Button>
-                            <Link to="/register" className="text-sm text-muted-foreground block text-center mt-2">
-                                <span className="text-sm text-muted-foreground underline hover:text-primary">Registrati</span>
-                            </Link>
-                        </div>
-                    </FieldGroup>
-                </form>
-            </div>
-            <Footer />
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-primary ">
+      <div className="bg-secondary rounded-lg p-6 w-full max-w-xl">
+        <div className="flex items-center justify-center w-20 h-20 rounded-full bg-primary p-2 mx-auto">
+          <HugeiconsIcon icon={CameraIcon} strokeWidth={2} className="text-secondary w-12 h-12" />
         </div>
-    )
+        <h1 className="text-2xl font-semibold text-primary text-center mt-4">Registro Copie Scolastico</h1>
+        <h3 className="text-sm text-center text-muted-foreground">Accesso Riservato</h3>
+
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            form.handleSubmit();
+          }}
+          className="mt-6"
+        >
+          <FieldGroup>
+            {/* Campo Identifier (email o username) */}
+            <form.Field
+              name="identifier"
+            >
+              {(field) => (
+                <Field>
+                  <FieldLabel htmlFor="identifier">Email o Username</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id="identifier"
+                      type="text"
+                      placeholder="Inserisci email o username"
+                      className="rounded-none h-12"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                    />
+                      {
+                      field.state.meta.errors.length > 0 && (
+                       field.state.meta.errors.map((error, index) => (
+                        <span key={index} className="text-red-500 text-xs">
+                          {error?.message}
+                        </span>
+                       ))
+                      )
+
+                    }
+                  </FieldContent>
+                </Field>
+              )}
+            </form.Field>
+
+            {/* Campo Password */}
+            <form.Field
+              name="password"
+            >
+              {(field) => (
+                <Field>
+                  <FieldLabel htmlFor="password">Password</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder="Inserisci la password"
+                      className="rounded-none h-12"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                    />
+                    {
+                      field.state.meta.errors.length > 0 && field.state.value.length > 0 && (
+                       field.state.meta.errors.map((error, index) => (
+                        <span key={index} className="text-red-500 text-xs">
+                          {error?.message}
+                        </span>
+                       ))
+                      )
+
+                    }
+                  </FieldContent>
+                </Field>
+              )}
+            </form.Field>
+
+            {/* Messaggio di successo da Register */}
+            {successMessage && (
+              <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded">
+                {successMessage}
+              </div>
+            )}
+
+            {/* Messaggio di errore dal server */}
+            {serverError && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {serverError}
+              </div>
+            )}
+
+
+
+            <div className="pt-2 flex flex-col items-center justify-center">
+              <form.Subscribe selector={(state) => [state.canSubmit, state.isSubmitting]}>
+                {([canSubmit, isSubmitting]) => (
+                  <Button type="submit" className="w-full rounded-none" disabled={!canSubmit || isSubmitting}>
+                    {isSubmitting ? 'Accesso in corso...' : 'Accedi'}
+                  </Button>
+                )}
+              </form.Subscribe>
+              <Link to="/register" className="text-sm text-muted-foreground block text-center mt-2">
+                <span className="text-sm text-muted-foreground underline hover:text-primary">Registrati</span>
+              </Link>
+            </div>
+          </FieldGroup>
+        </form>
+      </div>
+      <Footer />
+    </div>
+  );
 }

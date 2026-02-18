@@ -1,11 +1,30 @@
 import { useForm } from '@tanstack/react-form';
-import { insertIstitutoSchema, registerSchema } from '@shared/validation'; 
+import { insertIstitutoSchema, registerSchema } from '../../../shared/validation.js';
+import { Field, FieldContent, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { CameraIcon } from "@hugeicons/core-free-icons";
+import { HugeiconsIcon } from "@hugeicons/react";
+import Footer from "./Footer";
+import { Link, useNavigate } from "react-router-dom";
+import { register } from "@/lib/auth-api.js";
+import { useState } from "react";
 
+/**
+ * Componente Register con validazione Zod e gestione errori
+ * 
+ * Spiegazione:
+ * - Usa TanStack Form per gestione form state
+ * - Valida manualmente con Zod prima di inviare (coerenza con backend)
+ * - Chiama auth-api.register() invece di fetch diretto
+ * - Dopo registrazione riuscita: redirect a /login con messaggio di successo
+ * - Gestisce errori specifici (es. istituto già esistente, email già in uso)
+ */
 export default function Register() {
+  const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
   const form = useForm({
     defaultValues: {
       istituto: {
@@ -18,35 +37,168 @@ export default function Register() {
       },
     },
     onSubmit: async ({ value }) => {
-      try {
-        const response = await fetch('http://localhost:3000/api/setup-scuola', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(value),
-        });
-        
-        const result = await response.json();
+      setIsLoading(true);
+      setError(null);
 
-        if (!response.ok) {
-          // Gestiamo l'errore che arriva dal nostro middleware Express
-          throw new Error(result.error || 'Errore durante la registrazione');
-        }
+      try {
+        // Validazione Zod manuale prima di inviare
+        const validatedIstituto = insertIstitutoSchema.parse(value.istituto);
+        const validatedUtente = registerSchema.parse(value.utente);
         
-        alert('Configurazione completata con successo!');
-        // Qui potresti reindirizzare l'utente alla dashboard
+        // Chiama API register
+        await register(validatedIstituto, validatedUtente);
+        
+        // Registrazione riuscita, redirect a login con messaggio
+        navigate('/login', { 
+          state: { 
+            message: 'Configurazione completata con successo! Ora puoi accedere.' 
+          } 
+        });
       } catch (err: any) {
-        alert(err.message);
+        // Gestione errori Zod o API
+        if (err.errors) {
+          // Errore di validazione Zod
+          const firstError = err.errors[0];
+          const fieldPath = firstError.path.join('.');
+          setError(`${fieldPath}: ${firstError.message}`);
+        } else {
+          // Errore API
+          const errorMessage = err.response?.data?.error || err.message || 'Errore durante la registrazione';
+          setError(errorMessage);
+        }
+      } finally {
+        setIsLoading(false);
       }
     },
   });
 
   return (
-    <div className="container py-10 max-w-3xl mx-auto">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold tracking-tight">Benvenuto nel SaaS Fotocopie</h1>
-        <p className="text-muted-foreground mt-2">Configura il tuo istituto e il primo account amministratore.</p>
-      </div>
+    <div className="min-h-screen flex items-center justify-center bg-primary ">
+      <div className="bg-secondary rounded-lg p-6 w-full max-w-xl">
+        <div className="flex items-center justify-center w-20 h-20 rounded-full bg-primary p-2 mx-auto">
+          <HugeiconsIcon icon={CameraIcon} strokeWidth={2} className="text-secondary w-12 h-12" />
+        </div>
+        <h1 className="text-2xl font-semibold text-primary text-center mt-4">
+          Configurazione Registro Copie
+        </h1>
+        <h3 className="text-sm text-center text-muted-foreground">
+          Configura il tuo istituto e crea l&apos;account amministratore
+        </h3>
 
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            form.handleSubmit();
+          }}
+          className="mt-6"
+        >
+          <FieldGroup>
+            {/* Campo Nome Istituto */}
+            <form.Field name="istituto.nome">
+              {(field) => (
+                <Field>
+                  <FieldLabel htmlFor="istituto-nome">Nome Istituto</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id="istituto-nome"
+                      type="text"
+                      placeholder="Inserisci il nome dell'istituto"
+                      className="rounded-none h-12"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                    />
+                  </FieldContent>
+                </Field>
+              )}
+            </form.Field>
+
+            {/* Campo Codice Istituto */}
+            <form.Field name="istituto.codiceIstituto">
+              {(field) => (
+                <Field>
+                  <FieldLabel htmlFor="istituto-codice">Codice Istituto</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id="istituto-codice"
+                      type="text"
+                      placeholder="Inserisci il codice meccanografico (10 caratteri)"
+                      className="rounded-none h-12"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      maxLength={10}
+                    />
+                  </FieldContent>
+                </Field>
+              )}
+            </form.Field>
+
+            {/* Campo Email Amministratore */}
+            <form.Field name="utente.email">
+              {(field) => (
+                <Field>
+                  <FieldLabel htmlFor="utente-email">Email amministratore</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id="utente-email"
+                      type="email"
+                      placeholder="Inserisci l'email dell'amministratore"
+                      className="rounded-none h-12"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                    />
+                  </FieldContent>
+                </Field>
+              )}
+            </form.Field>
+
+            {/* Campo Password Amministratore */}
+            <form.Field name="utente.password">
+              {(field) => (
+                <Field>
+                  <FieldLabel htmlFor="utente-password">Password amministratore</FieldLabel>
+                  <FieldContent>
+                    <Input
+                      id="utente-password"
+                      type="password"
+                      placeholder="Inserisci la password (minimo 8 caratteri)"
+                      className="rounded-none h-12"
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                    />
+                  </FieldContent>
+                </Field>
+              )}
+            </form.Field>
+
+            {/* Messaggio di errore generale */}
+            {error && (
+              <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded">
+                {error}
+              </div>
+            )}
+
+            <div className="pt-2">
+              <Button
+                type="submit"
+                className="w-full rounded-none"
+                size="lg"
+                variant="default"
+                disabled={isLoading}
+              >
+                {isLoading ? 'Configurazione in corso...' : 'Configura istituto'}
+              </Button>
+              <Link to="/login" className="text-sm text-muted-foreground block text-center mt-2">
+                <span className="text-sm text-muted-foreground underline hover:text-primary">Accedi</span>
+              </Link>
+            </div>
+          </FieldGroup>
+        </form>
+      </div>
+      <Footer />
     </div>
   );
 }

@@ -16,15 +16,26 @@ import { CameraIcon, FileIcon, KeyIcon, LogoutIcon } from "@hugeicons/core-free-
 import { HugeiconsIcon } from "@hugeicons/react"
 import { Link } from "react-router-dom"
 import { useNavigate } from "react-router-dom"
+import { useAuthStore } from "./store/auth-store"
+import { useQueryClient } from "@tanstack/react-query"
+import { logout } from "./lib/auth-api"
   export function AppSidebar() {
     const navigate = useNavigate()
+    const queryClient = useQueryClient()	
+    
     const { setOpenMobile } = useSidebar()
+    const { jwtPayload } = useAuthStore()
+    const isAdmin = jwtPayload?.ruolo === "admin"
     const menuItems = [
-        { title: "Registra Copie ", url: "/", icon: CameraIcon },
-        { title: "Gestione Docenti", url: "/gestione-docenti", icon: FileIcon },
-        { title: "Gestione Utenze", url: "/gestione-utenze", icon: KeyIcon },
+        { title: "Registra Copie ", url: "/", icon: CameraIcon, isProtected: false },
+        { title: "Gestione Docenti", url: "/gestione-docenti", icon: FileIcon, isProtected: true },
+        { title: "Gestione Utenze", url: "/gestione-utenze", icon: KeyIcon, isProtected: true },
     ]
-    const handleLogout = () => {
+    const handleLogout = async () => {
+        // La funzione logout gestisce già tutto: chiamata API, pulizia store e cache
+        // Non serve try-catch perché logout() gestisce gli errori internamente
+        // e pulisce sempre lo store locale (necessario per permettere l'accesso a /login)
+        await logout(queryClient)
         navigate('/login')
     }
     return (
@@ -41,9 +52,9 @@ import { useNavigate } from "react-router-dom"
         <SidebarGroup>
           <SidebarGroupContent>
             <SidebarMenu>
-              {menuItems.map((item) => (
-                <Link to={item.url} className="" onClick={() => setOpenMobile(false)}>
-                <SidebarMenuItem key={item.title}>
+              {menuItems.filter((item) => !item.isProtected || isAdmin).map((item) => (
+                <Link key={item.title} to={item.url} className="" onClick={() => setOpenMobile(false)}>
+                <SidebarMenuItem>
                     <SidebarMenuButton  className="rounded-none h-12 text-sidebar-border hover:text-primary w-full justify-between gap-2 " >
                       
                         <p className="font-semibold">{item.title}</p>
