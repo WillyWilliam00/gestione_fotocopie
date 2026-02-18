@@ -12,8 +12,10 @@ import { createColumnsDocenti, type Docenti } from "./table/columns";
 import { useState, Suspense } from "react";
 import { useForm } from "@tanstack/react-form";
 import { AxiosError } from "axios";
-import { useCreateDocente, useDocentiSuspense } from "@/hooks/use-docenti";
+import { useCreateDocente, useDocentiSuspense, useDeleteAllDocenti } from "@/hooks/use-docenti";
+import { useDeleteAllRegistrazioni } from "@/hooks/use-registrazioni.js";
 import { insertDocenteFormSchema, type DocentiQuery } from "../../../shared/validation.js";
+import { ImportDocentiDialog } from "./ImportDocentiDialog";
 
 type DialogMode = 'add' | 'edit' | 'view' | null;
 
@@ -72,7 +74,12 @@ export default function GestioneDocenti() {
     const [dialogMode, setDialogMode] = useState<DialogMode>(null);
     const [selectedDocente, setSelectedDocente] = useState<Docenti | null>(null);
     const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
+    const [isResetConteggioOpen, setIsResetConteggioOpen] = useState(false);
     const { mutate: createDocente, isPending: isCreating, isError, error, reset: resetMutation } = useCreateDocente();
+    const { mutate: deleteAllRegistrazioni, isPending: isResettingConteggio, isError: isResetError, error: resetError, reset: resetResetMutation } = useDeleteAllRegistrazioni();
+    const { mutate: deleteAllDocenti, isPending: isDeletingAll, isError: isDeleteAllError, error: deleteAllError, reset: resetDeleteAllMutation } = useDeleteAllDocenti();
+    const [isDeleteAllDialogOpen, setIsDeleteAllDialogOpen] = useState(false);
     const [docentiQuery, setDocentiQuery] = useState<DocentiQuery>(defaultQuery);
 
     const handlePageChange = (page: number) => {
@@ -130,7 +137,7 @@ export default function GestioneDocenti() {
     return (
         <div>
             <div className="flex justify-end pt-5 pr-5 w-full gap-2">
-                <AlertDialog>
+                <AlertDialog open={isDeleteAllDialogOpen} onOpenChange={(open) => { if (open) resetDeleteAllMutation(); setIsDeleteAllDialogOpen(open); }}>
                     <AlertDialogTrigger asChild>
                         <Button variant="destructive" className="">
                             <HugeiconsIcon icon={DeleteIcon} strokeWidth={2} />
@@ -149,13 +156,28 @@ export default function GestioneDocenti() {
                                 Questa azione eliminerà tutti i docenti dal sistema. Questa operazione non può essere annullata.
                             </AlertDialogDescription>
                         </AlertDialogHeader>
+                        {isDeleteAllError && deleteAllError && (
+                            <p className="text-sm text-destructive" role="alert">
+                                {deleteAllError instanceof AxiosError
+                                    ? (deleteAllError.response?.data?.error || deleteAllError.message || 'Errore durante l\'eliminazione.')
+                                    : (deleteAllError instanceof Error ? deleteAllError.message : 'Errore durante l\'eliminazione.')}
+                            </p>
+                        )}
                         <AlertDialogFooter>
-                            <AlertDialogCancel variant="outline">Annulla</AlertDialogCancel>
-                            <AlertDialogAction variant="destructive">Elimina tutti</AlertDialogAction>
+                            <AlertDialogCancel variant="outline" disabled={isDeletingAll}>Annulla</AlertDialogCancel>
+                            <AlertDialogAction
+                                variant="destructive"
+                                disabled={isDeletingAll}
+                                onClick={() => deleteAllDocenti(undefined, {
+                                    onSuccess: () => setIsDeleteAllDialogOpen(false),
+                                })}
+                            >
+                                {isDeletingAll ? 'Eliminazione…' : 'Elimina tutti'}
+                            </AlertDialogAction>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
-                <AlertDialog>
+                <AlertDialog open={isResetConteggioOpen} onOpenChange={(open) => { if (open) resetResetMutation(); setIsResetConteggioOpen(open); }}>
                         <AlertDialogTrigger asChild>
                             <Button variant="destructive">
                                 <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} />
@@ -167,14 +189,29 @@ export default function GestioneDocenti() {
                                 <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
                                     <HugeiconsIcon icon={RefreshIcon} strokeWidth={2} />
                                 </AlertDialogMedia>
-                                <AlertDialogTitle>Resettare il conteggio totale dei docenti?</AlertDialogTitle>
+                                <AlertDialogTitle>Eliminare tutte le copie effettuate?</AlertDialogTitle>
                                 <AlertDialogDescription>
-                                    Questa azione resetterà il conteggio totale dei docenti.
+                                    Verranno eliminate tutte le copie effettuate di tutti i docenti dell&apos;istituto. L&apos;azione è irreversibile. Sì per confermare.
                                 </AlertDialogDescription>
                             </AlertDialogHeader>
+                            {isResetError && resetError && (
+                                <p className="text-sm text-destructive" role="alert">
+                                    {resetError instanceof AxiosError
+                                        ? (resetError.response?.data?.error || resetError.message || 'Errore durante il reset.')
+                                        : (resetError instanceof Error ? resetError.message : 'Errore durante il reset.')}
+                                </p>
+                            )}
                             <AlertDialogFooter>
-                                <AlertDialogCancel variant="outline">Annulla</AlertDialogCancel>
-                                <AlertDialogAction variant="destructive">Resetta</AlertDialogAction>
+                                <AlertDialogCancel variant="outline" disabled={isResettingConteggio}>Annulla</AlertDialogCancel>
+                                <Button
+                                    variant="destructive"
+                                    disabled={isResettingConteggio}
+                                    onClick={() => deleteAllRegistrazioni(undefined, {
+                                        onSuccess: () => setIsResetConteggioOpen(false),
+                                    })}
+                                >
+                                    {isResettingConteggio ? 'Attendere…' : 'Sì'}
+                                </Button>
                             </AlertDialogFooter>
                         </AlertDialogContent>
                     </AlertDialog>
@@ -205,10 +242,7 @@ export default function GestioneDocenti() {
                             setIsDeleteDialogOpen(true);
                         }}
                         onAddClick={handleOpenAddDialog}
-                        onImportClick={() => {
-                            // TODO: Implementa la funzione per importare file
-                            console.log("Importa file");
-                        }}
+                        onImportClick={() => setIsImportDialogOpen(true)}
                         onPageChange={handlePageChange}
                     />
                 </Suspense>
@@ -413,6 +447,11 @@ export default function GestioneDocenti() {
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialog>
+
+            <ImportDocentiDialog
+                open={isImportDialogOpen}
+                onOpenChange={setIsImportDialogOpen}
+            />
         </div>
     )
 }

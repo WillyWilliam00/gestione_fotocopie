@@ -1,7 +1,7 @@
 import { useQuery, useSuspenseQuery, useSuspenseInfiniteQuery, useMutation, useQueryClient, keepPreviousData } from '@tanstack/react-query';
 import { api } from '../lib/api.js';
 import type { DocentiPaginatedResponse, DocenteConRegistrazioni } from '../../../shared/types.js';
-import type { DocentiQuery, InsertDocente, ModifyDocente } from '../../../shared/validation.js';
+import type { BulkImportDocenti, DocentiQuery, InsertDocente, ModifyDocente } from '../../../shared/validation.js';
 
 /**
  * Hook per gestire i docenti con TanStack Query
@@ -28,6 +28,7 @@ import type { DocentiQuery, InsertDocente, ModifyDocente } from '../../../shared
  * - POST /api/docenti/new-docente
  * - PUT /api/docenti/update-docente/:id
  * - DELETE /api/docenti/delete-docente/:id
+ * - DELETE /api/docenti/delete-all
  */
 
 /**
@@ -212,6 +213,53 @@ export function useDeleteDocente() {
     mutationFn: async (id: number) => {
       const response = await api.delete<{ message: string; id: number }>(
         `/docenti/delete-docente/${id}`
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['docenti'] });
+    },
+  });
+}
+
+/**
+ * Hook per eliminare tutti i docenti del tenant
+ *
+ * Stati: isPending = true durante la delete → disabilita pulsante / conferma
+ *
+ * @returns Mutation con mutate, mutateAsync, isPending, error, ecc.
+ */
+export function useDeleteAllDocenti() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async () => {
+      const response = await api.delete<{ message: string; deletedCount: number }>(
+        '/docenti/delete-all'
+      );
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['docenti'] });
+    },
+  });
+}
+
+/**
+ * Hook per importare multipli docenti con copie già effettuate
+ *
+ * Stati: isPending = true durante l'import → disabilita pulsante / mostra loading
+ *
+ * @returns Mutation con mutate, mutateAsync, isPending, error, ecc.
+ */
+export function useBulkImportDocenti() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (data: BulkImportDocenti) => {
+      const response = await api.post<{ message: string; data: { docenti: DocenteConRegistrazioni[]; totaleCreati: number; totaleConCopie: number } }>(
+        '/docenti/bulk-import',
+        data
       );
       return response.data;
     },
