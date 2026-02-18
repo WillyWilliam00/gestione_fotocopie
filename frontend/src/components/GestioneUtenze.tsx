@@ -1,7 +1,6 @@
 import { Suspense, useState, useCallback, startTransition } from "react";
 import HeaderSection from "./HeaderSection";
-import { createColumnsUtenze } from "./table/columns";
-import { UtenzeTable } from "./utenze/UtenzeTable";
+import { GestioneUtenzeContent } from "./GestioneUtenzeContent";
 import { KeyIcon, Plus, SearchIcon, DeleteIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import {
@@ -48,7 +47,7 @@ function utenteDisplayName(u: Utente): string {
 
 const defaultQuery: UtentiQuery = {
   page: 1,
-  pageSize: 20,
+  pageSize: 10,
   sortOrder: "asc",
 };
 
@@ -139,18 +138,6 @@ export default function GestioneUtenze() {
     setSelectedUtente(null);
   }, [selectedUtente, deleteUtente]);
 
-  const columns = createColumnsUtenze({
-    onView: (utente) => {
-      setSelectedUtente(utente);
-      setDialogMode("view");
-    },
-    onEdit: handleOpenEdit,
-    onDelete: (utente) => {
-      setSelectedUtente(utente);
-      setDialogMode("delete");
-    },
-  });
-
   const viewIdentifier = selectedUtente ? utenteDisplayName(selectedUtente) : "";
 
   return (
@@ -190,10 +177,18 @@ export default function GestioneUtenze() {
             </div>
           }
         >
-          <UtenzeTable
+          <GestioneUtenzeContent
             query={queryWithFilter}
-            columns={columns}
             onPageChange={(page) => setQuery((prev) => ({ ...prev, page }))}
+            onView={(utente) => {
+              setSelectedUtente(utente);
+              setDialogMode("view");
+            }}
+            onEdit={handleOpenEdit}
+            onDelete={(utente) => {
+              setSelectedUtente(utente);
+              setDialogMode("delete");
+            }}
           />
         </Suspense>
       </div>
