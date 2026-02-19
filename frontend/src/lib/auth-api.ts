@@ -1,7 +1,7 @@
 import { api } from './api.js';
 import { useAuthStore } from '../store/auth-store.js';
 import type { LoginData, RegisterData, InsertIstituto } from '../../../shared/validation.js';
-import type { LoginResponse, RefreshTokenResponse } from '../../../shared/types.js';
+import type { LoginResponse } from '../../../shared/types.js';
 import type { QueryClient } from '@tanstack/react-query';
 
 /**
@@ -106,25 +106,3 @@ export async function logout(queryClient?: QueryClient): Promise<{ message: stri
   return { message: 'Logout effettuato con successo' };
 }
 
-/**
- * Refresh: ottiene un nuovo access token usando il refresh token
- * 
- * Spiegazione:
- * - Chiama /auth/refresh con il refresh token
- * - Se ha successo, aggiorna token e refreshToken nello store
- * - Decodifica il nuovo JWT per aggiornare il payload
- * - Viene chiamato automaticamente dall'interceptor quando necessario
- * 
- * @param refreshToken - Il refresh token da usare
- * @returns La risposta con nuovo token e refresh token
- */
-export async function refresh(refreshToken: string): Promise<RefreshTokenResponse> {
-  const response = await api.post<RefreshTokenResponse>('/auth/refresh', {
-    refreshToken,
-  });
-  
-  // Aggiorna nello store
-  useAuthStore.getState().refresh(response.data);
-  
-  return response.data;
-}

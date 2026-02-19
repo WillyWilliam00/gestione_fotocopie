@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import type { LoginResponse, RefreshTokenResponse, JwtPayload } from '../../../shared/types.js';
+import type { LoginResponse, JwtPayload } from '../../../shared/types.js';
 import { decodeJWT } from '../lib/jwt-utils.js';
 
 /**
@@ -32,11 +32,13 @@ interface AuthState {
   
   // Computed: verifica se l'utente è autenticato
   isAuthenticated: boolean;
+
+  // True finché il persist middleware non ha finito di leggere da localStorage
+  isInitializing: boolean;
   
   // Azioni
   login: (response: LoginResponse) => void;
   logout: () => void;
-  refresh: (response: RefreshTokenResponse) => void;
   setTokens: (token: string, refreshToken: string) => void;
   setUser: (utente: AuthState['utente']) => void;
 }
@@ -50,6 +52,7 @@ export const useAuthStore = create<AuthState>()(
       utente: null,
       jwtPayload: null,
       isAuthenticated: false,
+      isInitializing: true,
 
       /**
        * Login: salva token, refreshToken, dati utente e decodifica JWT payload
@@ -87,28 +90,6 @@ export const useAuthStore = create<AuthState>()(
           utente: null,
           jwtPayload: null,
           isAuthenticated: false,
-        });
-      },
-
-      /**
-       * Refresh: aggiorna token e refreshToken dopo un refresh riuscito
-       * 
-       * Spiegazione:
-       * - Viene chiamato quando l'access token viene rinnovato
-       * - Aggiorna solo i token (non i dati utente che rimangono invariati)
-       * - Decodifica il nuovo JWT per aggiornare il payload
-       * - Aggiorna isAuthenticated usando la stessa logica di onRehydrateStorage
-       */
-      refresh: (response: RefreshTokenResponse) => {
-        const jwtPayload = decodeJWT(response.token);
-        const currentState = get();
-        
-        set({
-          token: response.token,
-          refreshToken: response.refreshToken || currentState.refreshToken,
-          jwtPayload,
-          // Calcoliamo isAuthenticated usando la stessa logica di onRehydrateStorage
-          isAuthenticated: !!response.token && !!currentState.utente,
         });
       },
 
@@ -151,9 +132,11 @@ export const useAuthStore = create<AuthState>()(
         jwtPayload: state.jwtPayload,
       }),
       // Quando i dati vengono ripristinati da localStorage, calcoliamo isAuthenticated
+      // e segnaliamo che l'inizializzazione è completata
       onRehydrateStorage: () => (state) => {
         if (state) {
           state.isAuthenticated = !!state.token && !!state.utente;
+          state.isInitializing = false;
         }
       },
     }

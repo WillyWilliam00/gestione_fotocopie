@@ -9,28 +9,38 @@ import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useAuthInitialization } from "./hooks/use-auth-initialization.js";
+import { useRef } from "react";
+import { useAuthStore } from "./store/auth-store.js";
 
 export function App() {
-  // Inizializza l'autenticazione all'avvio (refresh token se scaduto)
-  useAuthInitialization();
+  const isInitializing = useAuthStore((state) => state.isInitializing);
 
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        retry: 1,
-        refetchOnWindowFocus: false,
-        // Dati considerati "freschi" per 2 minuti: niente refetch automatico in quel periodo
-        staleTime: 2 * 60 * 1000, // 2 minuti (in ms)
-        // Cache tenuta in memoria per 5 minuti dopo che nessun componente la usa
-        gcTime: 5 * 60 * 1000, // 5 minuti (in ms), ex cacheTime in v4
+  // QueryClient creato una sola volta per l'intera vita del componente
+  const queryClientRef = useRef<QueryClient | null>(null);
+  if (!queryClientRef.current) {
+    queryClientRef.current = new QueryClient({
+      defaultOptions: {
+        queries: {
+          retry: 1,
+          refetchOnWindowFocus: false,
+          staleTime: 2 * 60 * 1000,
+          gcTime: 5 * 60 * 1000,
+        },
       },
-    },
-  });
+    });
+  }
+
+  if (isInitializing) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   return (
     <ErrorBoundary>
-      <QueryClientProvider client={queryClient}>
+      <QueryClientProvider client={queryClientRef.current}>
         <BrowserRouter>
           <Routes>
               {/* Route pubbliche */}

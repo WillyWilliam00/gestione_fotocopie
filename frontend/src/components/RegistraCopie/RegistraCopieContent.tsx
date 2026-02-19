@@ -43,6 +43,17 @@ export default function RegistraCopieContent({
     if (docenti.length === 0) return;
     const lastItem = virtualItems[virtualItems.length - 1];
     if (!lastItem) return;
+    
+    // Controlla se l'utente ha effettivamente scrollato (non siamo ancora all'inizio)
+    const scrollElement = parentRef.current;
+    if (!scrollElement) return;
+    
+    // Se lo scroll è ancora molto vicino all'inizio (< 100px), non fare fetch automatico
+    // Questo evita di caricare pagina 2 subito al mount se la lista iniziale è corta
+    const scrollTop = scrollElement.scrollTop;
+    if (scrollTop < 100) return;
+    
+    // Solo se l'utente è vicino alla fine della lista E ha scrollato, carica la pagina successiva
     if (lastItem.index >= docenti.length - FETCH_NEXT_THRESHOLD && hasNextPage && !isFetchingNextPage) {
       fetchNextPage();
     }
