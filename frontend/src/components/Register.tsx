@@ -8,6 +8,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import Footer from "./Footer";
 import { Link, useNavigate } from "react-router-dom";
 import { register } from "@/lib/auth-api.js";
+import { formatError } from "@/lib/utils";
 import { useState } from "react";
 
 /**
@@ -48,11 +49,14 @@ export default function Register() {
         // Chiama API register
         await register(validatedIstituto, validatedUtente);
 
-        // Registrazione riuscita, redirect a login con messaggio
+        // Registrazione riuscita, redirect a login con:
+        // - messaggio di successo
+        // - email precompilata nel form di login
         navigate('/login', {
           state: {
-            message: 'Configurazione completata con successo! Ora puoi accedere.'
-          }
+            message: 'Configurazione completata con successo! Ora puoi accedere.',
+            identifier: validatedUtente.email,
+          },
         });
       } catch (err: any) {
         // Gestione errori Zod o API
@@ -62,9 +66,7 @@ export default function Register() {
           const fieldPath = firstError.path.join('.');
           setError(`${fieldPath}: ${firstError.message}`);
         } else {
-          // Errore API
-          const errorMessage = err.response?.data?.error || err.message || 'Errore durante la registrazione';
-          setError(errorMessage);
+          setError(formatError(err, "Errore durante la registrazione"));
         }
       } finally {
         setIsLoading(false);

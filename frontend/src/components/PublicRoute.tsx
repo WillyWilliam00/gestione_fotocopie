@@ -15,7 +15,7 @@ export default function PublicRoute({ children }: { children: React.ReactNode })
 
   // Se già autenticato e su login/register, redirect a home
   if (isAuthenticated && (location.pathname === '/login' || location.pathname === '/register')) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/registra-copie" replace />;
   }
 
   return <>{children}</>;

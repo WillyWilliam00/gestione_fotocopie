@@ -27,6 +27,13 @@ interface AuthState {
     ruolo: 'admin' | 'collaboratore';
   } | null;
   
+  // Dati istituto (da LoginResponse)
+  istituto: {
+    id: number;
+    nome: string;
+    codiceIstituto: string;
+  } | null;
+  
   // JWT payload decodificato (per accesso rapido a userId, ruolo, istitutoId)
   jwtPayload: JwtPayload | null;
   
@@ -50,6 +57,7 @@ export const useAuthStore = create<AuthState>()(
       token: null,
       refreshToken: null,
       utente: null,
+      istituto: null,
       jwtPayload: null,
       isAuthenticated: false,
       isInitializing: true,
@@ -70,6 +78,7 @@ export const useAuthStore = create<AuthState>()(
           token: response.token,
           refreshToken: response.refreshToken,
           utente: response.utente,
+          istituto: response.istituto,
           jwtPayload,
           isAuthenticated: true,
         });
@@ -88,6 +97,7 @@ export const useAuthStore = create<AuthState>()(
           token: null,
           refreshToken: null,
           utente: null,
+          istituto: null,
           jwtPayload: null,
           isAuthenticated: false,
         });
@@ -129,6 +139,7 @@ export const useAuthStore = create<AuthState>()(
         token: state.token,
         refreshToken: state.refreshToken,
         utente: state.utente,
+        istituto: state.istituto,
         jwtPayload: state.jwtPayload,
       }),
       // Quando i dati vengono ripristinati da localStorage, calcoliamo isAuthenticated

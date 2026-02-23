@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import Footer from "./Footer";
 import { login } from "@/lib/auth-api.js";
-import { AxiosError } from "axios";
+import { formatError } from "@/lib/utils";
 import { useState } from "react";
 
 /**
@@ -19,11 +19,12 @@ import { useState } from "react";
  * - Valida manualmente con Zod prima di inviare (evita chiamate API con dati invalidi)
  * - Mostra errori specifici per ogni campo (es. "Password deve essere almeno 8 caratteri")
  * - Chiama auth-api.login() che salva automaticamente nello store Zustand
- * - Dopo login riuscito, redirect a / (route protetta)
+       * - Dopo login riuscito, redirect a /registra-copie (route protetta)
  */
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
+  const prefillIdentifier = location.state?.identifier ?? '';
   const [serverError, setServerError] = useState<string | null>(null);
   const [showPassword, setShowPassword] = useState(false);
 
@@ -32,7 +33,7 @@ export default function Login() {
 
   const form = useForm({
     defaultValues: {
-      identifier: '',
+      identifier: prefillIdentifier,
       password: '',
     },
     validators: {
@@ -45,20 +46,11 @@ export default function Login() {
         // Chiama API login
         await login(value.identifier, value.password);
 
-
-        // Login riuscito, redirect a home
-        navigate('/');
+        // Login riuscito, redirect alla pagina di registrazione copie
+        navigate('/registra-copie');
       } catch (err: unknown) {
         console.log('errore', err);
-        // Gestiamo solo gli errori dal server (AxiosError)
-        // Gli errori Zod sono gestiti automaticamente dal form con validators
-        if (err instanceof AxiosError) {
-          const errorMessage = err.response?.data?.error || err.message || 'Errore durante il login';
-          setServerError(errorMessage);
-        } else {
-          // Errore generico non previsto
-          setServerError('Errore durante il login. Riprova più tardi.');
-        }
+        setServerError(formatError(err, "Errore durante il login. Riprova più tardi."));
       }
     },
   });
