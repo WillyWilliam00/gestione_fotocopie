@@ -11,6 +11,9 @@ import { ViewUtenteModal } from "./ViewUtenteModal";
 import { DeleteUtenteAlertDialog } from "./DeleteUtenteAlertDialog";
 import EditUtenteModal from "./EditUtenteModal";
 import { Button } from "@/components/ui/button";
+import ErrorBoundary from "../common/ErrorBoundary";
+import ErrorFallback from "../common/ErrorFallback";
+import { useQueryClient } from "@tanstack/react-query";
 
 
 
@@ -29,7 +32,12 @@ export default function GestioneUtenze() {
   const [utentiQuery, setUtentiQuery] = useState<UtentiQuery>(defaultQuery);
   const [selectedUtente, setSelectedUtente] = useState<Utente | null>(null);
   const [typeForm, setTypeForm] = useState<"delete" | "edit" | "view" | "add" | null>(null);
-
+  const [errorBoundaryKey, setErrorBoundaryKey] = useState(0);
+  const queryClient = useQueryClient();
+  const handleRetry = () => {
+    queryClient.invalidateQueries({ queryKey: ["utenti"] });
+    setErrorBoundaryKey((k) => k + 1);
+  };
 
 
   const handlePageChange = useCallback((page: number) => {
@@ -79,6 +87,12 @@ export default function GestioneUtenze() {
           </Button>
           <NuovoUtenteModal typeForm={typeForm} onClose={handleCloseForm} onOpenAddForm={handleOpenAddForm} />
         </div>
+        <ErrorBoundary
+          key={errorBoundaryKey}
+          fallback={  
+            <ErrorFallback onRetry={handleRetry} />
+          }
+        >
         <Suspense
           fallback={
             <div className="overflow-hidden rounded-md border mt-6 p-8 text-center text-muted-foreground">
@@ -101,6 +115,7 @@ export default function GestioneUtenze() {
             }}
           />
         </Suspense>
+        </ErrorBoundary>
       </div>
 
       <ViewUtenteModal selectedUtente={selectedUtente} typeForm={typeForm} onClose={handleCloseForm} />

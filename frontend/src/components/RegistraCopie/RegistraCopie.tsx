@@ -7,7 +7,7 @@ import HeaderSection from "@/components/layout/HeaderSection";
 import ErrorBoundary from "@/components/common/ErrorBoundary";
 import RegistraCopieContent from "./RegistraCopieContent";
 import RegistraCopieSkeleton from "./RegistraCopieSkeleton";
-import RegistraCopieErrorFallback from "./RegistraCopieErrorFallback";
+import RegistraCopieErrorFallback from "../common/ErrorFallback";
 import { useDebouncedValue } from "@/hooks/use-debounced-value.js";
 import { Button } from "@/components/ui/button";
 

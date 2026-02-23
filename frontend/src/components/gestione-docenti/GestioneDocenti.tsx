@@ -14,6 +14,9 @@ import { EliminaDocenteDialog } from "./EliminaDocenteDialog";
 import { type Docenti } from "@/components/table/columns";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
+import ErrorFallback from "../common/ErrorFallback";
+import ErrorBoundary from "../common/ErrorBoundary";
+import { useQueryClient } from "@tanstack/react-query";
 
 type TypeForm = "add" | "edit" | "view" | "delete" | null;
 
@@ -21,9 +24,15 @@ const defaultQuery: DocentiQuery = { page: 1, pageSize: 10, sortOrder: "desc", s
 
 export default function GestioneDocenti() {
   const [typeForm, setTypeForm] = useState<TypeForm>(null);
+  const [errorBoundaryKey, setErrorBoundaryKey] = useState(0);
   const [selectedDocente, setSelectedDocente] = useState<Docenti | null>(null);
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [docentiQuery, setDocentiQuery] = useState<DocentiQuery>(defaultQuery);
+  const queryClient = useQueryClient();
+  const handleRetry = () => {
+    queryClient.invalidateQueries({ queryKey: ["docenti"] });
+    setErrorBoundaryKey((k) => k + 1);
+  };
 
   const handlePageChange = useCallback((page: number) => {
     setDocentiQuery((prev: DocentiQuery) => ({ ...prev, page }));
@@ -102,6 +111,12 @@ export default function GestioneDocenti() {
             </Button>
           </div>
         </div>
+        <ErrorBoundary
+          key={errorBoundaryKey}
+          fallback={
+            <ErrorFallback onRetry={handleRetry} />
+          }
+        >
         <Suspense fallback={<div className="w-full mt-4 p-8 text-center text-muted-foreground">Caricamento docenti…</div>}>
           <GestioneDocentiContent
             query={docentiQuery}
@@ -112,6 +127,7 @@ export default function GestioneDocenti() {
             onPageSizeChange={handlePageSizeChange}
           />
         </Suspense>
+        </ErrorBoundary>
       </div>
 
       <ViewDocenteModal selectedDocente={selectedDocente} typeForm={typeForm} onClose={handleCloseForm} />
