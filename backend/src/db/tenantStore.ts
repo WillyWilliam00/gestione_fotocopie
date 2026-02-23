@@ -1,7 +1,7 @@
-import { and, asc, desc, eq, ilike, ne, type AnyColumn } from "drizzle-orm";
+import { and, asc, desc, eq, ilike, ne, or, type AnyColumn } from "drizzle-orm";
 import { bulkImportDocentiSchema, createUtenteSchema, docentiQuerySchema, insertDocenteSchema, insertRegistrazioneSchema, modifyDocenteSchema, modifyRegistrazioneSchema, modifyUtenteSchema, registrazioniCopieQuerySchema, utentiQuerySchema, type BulkImportDocenti, type CreateUtente, type DocentiQuery, type InsertDocente, type InsertRegistrazione, type ModifyDocente, type ModifyRegistrazione, type ModifyUtente, type RegistrazioniCopieQuery, type UtentiQuery } from "../../../shared/validation.js"
 import { docenti, istituti, registrazioniCopie, utenti } from "./schema.js";
-import type { DocentiPaginatedResponse, DocentiSort, SortOrder, UtentiPaginatedResponse, UtentiSort, Utente, RegistrazioniCopieSort, RegistrazioniCopiePaginatedResponse } from "../../../shared/types.js";
+import type { DocentiPaginatedResponse, DocentiSort, UtentiPaginatedResponse, UtentiSort, Utente, RegistrazioniCopieSort, RegistrazioniCopiePaginatedResponse } from "../../../shared/types.js";
 import { SQL, sql } from "drizzle-orm";
 import type { ErrorWithStatus } from "../middleware/auth.js";
 import bcrypt from 'bcrypt';
@@ -396,11 +396,18 @@ export const createTenantStore = (istitutoId: number, db: DbInstance | Transacti
         },
         registrazioniCopie: {
             getPaginated: async(query: RegistrazioniCopieQuery) => {
-                const { page, pageSize, docenteId, utenteId, sortField, sortOrder } = registrazioniCopieQuerySchema.parse(query);
+                const { page, pageSize, docenteId, utenteId, docenteNome, docenteCognome, copieEffettuate: copieFilter, utenteIdentifier, sortField, sortOrder } = registrazioniCopieQuerySchema.parse(query);
                 const offset = (page - 1) * pageSize;
                 const condition = [eq(registrazioniCopie.istitutoId, istitutoId)];
                 if(docenteId) condition.push(eq(registrazioniCopie.docenteId, docenteId));
                 if(utenteId) condition.push(eq(registrazioniCopie.utenteId, utenteId));
+                if(docenteNome) condition.push(ilike(docenti.nome, `%${docenteNome}%`));
+                if(docenteCognome) condition.push(ilike(docenti.cognome, `%${docenteCognome}%`));
+                if(copieFilter !== undefined) condition.push(eq(registrazioniCopie.copieEffettuate, copieFilter));
+                if(utenteIdentifier) {
+                    const toPush = or(ilike(utenti.username, `%${utenteIdentifier}%`), ilike(utenti.email, `%${utenteIdentifier}%`));
+                    if(toPush) condition.push(toPush);
+                }
                 const sortMap: Record<RegistrazioniCopieSort['field'], AnyColumn | SQL> = {
                     docenteId: registrazioniCopie.docenteId,
                     utenteId: registrazioniCopie.utenteId,
@@ -433,7 +440,7 @@ export const createTenantStore = (istitutoId: number, db: DbInstance | Transacti
                 .orderBy(...getSort(orderByColumn, sortOrder, registrazioniCopie.id))
              
 
-                const [totalCount] = await db.select({valore: sql`count(*)::int`}).from(registrazioniCopie).where(and(...condition));
+                const [totalCount] = await db.select({valore: sql`count(*)::int`}).from(registrazioniCopie).leftJoin(docenti, eq(registrazioniCopie.docenteId, docenti.id)).leftJoin(utenti, eq(registrazioniCopie.utenteId, utenti.id)).where(and(...condition));
 
                 const totalItems = Number(totalCount?.valore ?? 0);
                 const response: RegistrazioniCopiePaginatedResponse = {
