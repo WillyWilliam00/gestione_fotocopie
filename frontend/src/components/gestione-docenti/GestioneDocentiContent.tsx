@@ -1,7 +1,7 @@
-import { DataTable } from "./table/DataTable";
-import { createColumnsDocenti, type Docenti } from "./table/columns";
+import { DataTable } from "@/components/table/DataTable";
+import { createColumnsDocenti, type Docenti } from "@/components/table/columns";
 import { useDocentiSuspense } from "@/hooks/use-docenti";
-import type { DocentiQuery } from "../../../shared/validation.js";
+import type { DocentiQuery } from "@shared/validation";
 
 /** Contenuto che sospende fino al caricamento dei docenti; da usare dentro <Suspense>. */
 export function GestioneDocentiContent({

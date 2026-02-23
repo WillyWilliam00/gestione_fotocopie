@@ -1,15 +1,15 @@
 import { Suspense, useState, useCallback, useMemo } from "react";
-import HeaderSection from "./HeaderSection";
+import HeaderSection from "@/components/layout/HeaderSection";
 import { GestioneUtenzeContent } from "./GestioneUtenzeContent";
 import { KeyIcon, File } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import type { Utente } from "../../../shared/types.js";
-import type { UtentiQuery } from "../../../shared/validation.js";
-import { ServerFiltersBar } from "./ServerFiltersBar";
-import NuovoUtenteModal from "./NuovoUtenteModal.js";
-import { ViewUtenteModal } from "./ViewUtenteModal.js";
-import { DeleteUtenteAlertDialog } from "./DeleteUtenteAlertDialog.js";
-import EditUtenteModal from "./EditUtenteModal.js";
+import type { Utente } from "@shared/types";
+import type { UtentiQuery } from "@shared/validation";
+import { ServerFiltersBar } from "@/components/common/ServerFiltersBar";
+import NuovoUtenteModal from "./NuovoUtenteModal";
+import { ViewUtenteModal } from "./ViewUtenteModal";
+import { DeleteUtenteAlertDialog } from "./DeleteUtenteAlertDialog";
+import EditUtenteModal from "./EditUtenteModal";
 import { Button } from "@/components/ui/button";
 
 
@@ -33,15 +33,15 @@ export default function GestioneUtenze() {
 
 
   const handlePageChange = useCallback((page: number) => {
-    setUtentiQuery((prev) => ({ ...prev, page }));
+    setUtentiQuery((prev: UtentiQuery) => ({ ...prev, page }));
   }, []);
 
   const handleFilterChange = useCallback((filters: Record<string, string | undefined>) => {
-    setUtentiQuery((prev) => ({ ...prev, ...filters, page: 1 }));
+    setUtentiQuery((prev: UtentiQuery) => ({ ...prev, ...filters, page: 1 }));
   }, []);
 
   const handlePageSizeChange = useCallback((pageSize: string) => {
-    setUtentiQuery((prev) => ({ ...prev, pageSize: Number(pageSize), page: 1 }));
+    setUtentiQuery((prev: UtentiQuery) => ({ ...prev, pageSize: Number(pageSize), page: 1 }));
   }, []);
 
   const handleCloseForm = useCallback(() => {

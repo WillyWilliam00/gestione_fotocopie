@@ -10,7 +10,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel, FieldContent } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { type Docenti } from "./table/columns";
+import { type Docenti } from "@/components/table/columns";
 
 interface ViewDocenteModalProps {
   selectedDocente: Docenti | null;

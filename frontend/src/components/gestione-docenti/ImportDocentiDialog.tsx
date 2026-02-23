@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldLabel, FieldContent } from "@/components/ui/field";
 import { Button } from "@/components/ui/button";
 import { useBulkImportDocenti } from "@/hooks/use-docenti";
-import { bulkImportDocentiSchema, type BulkImportDocenti } from "../../../shared/validation.js";
+import { bulkImportDocentiSchema, type BulkImportDocenti } from "@shared/validation";
 import { parseExcelFile } from "@/lib/excel-utils.js";
 
 interface ImportDocentiDialogProps {
@@ -180,7 +180,7 @@ export function ImportDocentiDialog({ open, onOpenChange }: ImportDocentiDialogP
                     </tr>
                   </thead>
                   <tbody>
-                    {importPreview.map((docente, index) => (
+                    {importPreview.map((docente: BulkImportDocenti["docenti"][number], index: number) => (
                       <tr key={index} className="border-b">
                         <td className="p-2 border-r">{docente.nome}</td>
                         <td className="p-2 border-r">{docente.cognome}</td>

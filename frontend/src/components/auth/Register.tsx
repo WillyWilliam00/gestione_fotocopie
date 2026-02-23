@@ -1,11 +1,11 @@
 import { useForm } from '@tanstack/react-form';
-import { insertIstitutoSchema, registerSchema } from '../../../shared/validation.js';
+import { insertIstitutoSchema, registerSchema } from '@shared/validation';
 import { Field, FieldContent, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CameraIcon, EyeIcon, EyeOff } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
-import Footer from "./Footer";
+import Footer from "@/components/layout/Footer";
 import { Link, useNavigate } from "react-router-dom";
 import { register } from "@/lib/auth-api.js";
 import { formatError } from "@/lib/utils";

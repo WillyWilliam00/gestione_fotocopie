@@ -1,8 +1,8 @@
-import { createColumnsUtenze } from "./table/columns";
-import { DataTable } from "./table/DataTable";
-import { useUtenti } from "../hooks/use-utenti";
-import type { Utente } from "../../../shared/types.js";
-import type { UtentiQuery } from "../../../shared/validation.js";
+import { createColumnsUtenze } from "@/components/table/columns";
+import { DataTable } from "@/components/table/DataTable";
+import { useUtenti } from "@/hooks/use-utenti";
+import type { Utente } from "@shared/types";
+import type { UtentiQuery } from "@shared/validation";
 
 
 export interface GestioneUtenzeContentProps {

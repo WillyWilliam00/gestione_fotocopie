@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { Field, FieldLabel, FieldContent } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { useForm } from "@tanstack/react-form";
-import { insertDocenteFormSchema } from "../../../shared/validation.js";
+import { insertDocenteFormSchema } from "@shared/validation";
 import { useCreateDocente } from "@/hooks/use-docenti";
 import { formatError } from "@/lib/utils.js";
 import { HugeiconsIcon } from "@hugeicons/react";

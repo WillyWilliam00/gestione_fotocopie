@@ -1,12 +1,12 @@
 import { useForm } from '@tanstack/react-form';
-import { loginSchema } from '../../../shared/validation.js';
+import { loginSchema } from '@shared/validation';
 import { Field, FieldContent, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { CameraIcon, EyeIcon, EyeOff } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import Footer from "./Footer";
+import Footer from "@/components/layout/Footer";
 import { login } from "@/lib/auth-api.js";
 import { formatError } from "@/lib/utils";
 import { useState } from "react";

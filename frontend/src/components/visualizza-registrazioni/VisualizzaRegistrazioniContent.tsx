@@ -1,8 +1,8 @@
 import { useState } from "react";
-import { createColumnsRegistrazioni, type Registrazioni } from "./table/columns";
-import { DataTable } from "./table/DataTable";
-import { useRegistrazioniSuspense } from "../hooks/use-registrazioni";
-import type { RegistrazioniCopieQuery } from "../../../shared/validation";
+import { createColumnsRegistrazioni, type Registrazioni } from "@/components/table/columns";
+import { DataTable } from "@/components/table/DataTable";
+import { useRegistrazioniSuspense } from "@/hooks/use-registrazioni";
+import type { RegistrazioniCopieQuery } from "@shared/validation";
 
 export interface VisualizzaRegistrazioniContentProps {
   onView: (registrazione: Registrazioni) => void;
@@ -21,13 +21,13 @@ export function VisualizzaRegistrazioniContent({
   const [registrazioniQuery, setRegistrazioniQuery] = useState<RegistrazioniCopieQuery>(defaultQuery);
 
   const handlePageChange = (page: number) => {
-    setRegistrazioniQuery((prevQuery) => ({
+    setRegistrazioniQuery((prevQuery: RegistrazioniCopieQuery) => ({
       ...prevQuery,
       page,
     }));
   };
   const handlePageSizeChange = (pageSize: string) => {
-    setRegistrazioniQuery((prevQuery) => ({
+    setRegistrazioniQuery((prevQuery: RegistrazioniCopieQuery) => ({
       ...prevQuery,
       pageSize: Number(pageSize),
       page: 1,

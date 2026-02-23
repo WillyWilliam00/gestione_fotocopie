@@ -1,5 +1,5 @@
 import { Navigate, useLocation } from "react-router-dom";
-import { useAuthStore } from "../store/auth-store.js";
+import { useAuthStore } from "@/store/auth-store";
 
 /**
  * Componente per gestire redirect se già autenticato su route pubbliche

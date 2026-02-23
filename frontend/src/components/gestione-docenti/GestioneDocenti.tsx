@@ -1,17 +1,17 @@
 import { FileIcon } from "@hugeicons/core-free-icons";
-import HeaderSection from "./HeaderSection";
+import HeaderSection from "@/components/layout/HeaderSection";
 import { GestioneDocentiContent } from "./GestioneDocentiContent";
 import { useState, Suspense, useCallback, useMemo } from "react";
-import { type DocentiQuery } from "../../../shared/validation.js";
+import { type DocentiQuery } from "@shared/validation";
 import { ImportDocentiDialog } from "./ImportDocentiDialog";
-import { ServerFiltersBar } from "./ServerFiltersBar";
+import { ServerFiltersBar } from "@/components/common/ServerFiltersBar";
 import { EliminaTuttiDocentiDialog } from "./EliminaTuttiDocentiDialog";
 import { ResetConteggioDialog } from "./ResetConteggioDialog";
 import NuovoDocenteModal from "./NuovoDocenteModal";
 import EditDocenteModal from "./EditDocenteModal";
 import { ViewDocenteModal } from "./ViewDocenteModal";
 import { EliminaDocenteDialog } from "./EliminaDocenteDialog";
-import { type Docenti } from "./table/columns";
+import { type Docenti } from "@/components/table/columns";
 import { Button } from "@/components/ui/button";
 import { HugeiconsIcon } from "@hugeicons/react";
 
@@ -26,11 +26,11 @@ export default function GestioneDocenti() {
   const [docentiQuery, setDocentiQuery] = useState<DocentiQuery>(defaultQuery);
 
   const handlePageChange = useCallback((page: number) => {
-    setDocentiQuery((prev) => ({ ...prev, page }));
+    setDocentiQuery((prev: DocentiQuery) => ({ ...prev, page }));
   }, []);
 
   const handleFilterChange = useCallback((filters: Record<string, string | undefined>) => {
-    setDocentiQuery((prev) => ({
+    setDocentiQuery((prev: DocentiQuery) => ({
       ...prev,
       nome: filters.nome,
       cognome: filters.cognome,
@@ -39,7 +39,7 @@ export default function GestioneDocenti() {
   }, []);
 
   const handlePageSizeChange = useCallback((pageSize: string) => {
-    setDocentiQuery((prev) => ({
+    setDocentiQuery((prev: DocentiQuery) => ({
       ...prev,
       pageSize: Number(pageSize),
       page: 1,

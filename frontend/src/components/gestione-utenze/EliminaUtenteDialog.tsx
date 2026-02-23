@@ -13,7 +13,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import { DeleteIcon } from "@hugeicons/core-free-icons";
 import { formatError } from "@/lib/utils";
 import { useDeleteUtente } from "@/hooks/use-utenti";
-import type { Utente } from "../../../shared/types.js";
+import type { Utente } from "@shared/types";
 
 function utenteDisplayName(u: Utente): string {
   return u.ruolo === "admin" ? (u as { email: string }).email : (u as { username: string }).username;

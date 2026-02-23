@@ -10,11 +10,11 @@ import {
 import { Button } from "@/components/ui/button";
 import { Field, FieldLabel, FieldContent } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
-import { type Docenti } from "./table/columns";
+import { type Docenti } from "@/components/table/columns";
 import { formatError } from "@/lib/utils";
 import { useUpdateDocente } from "@/hooks/use-docenti";
 import { useForm } from "@tanstack/react-form";
-import { insertDocenteFormSchema } from "../../../shared/validation.js";
+import { insertDocenteFormSchema } from "@shared/validation";
 
 interface EditDocenteModalProps {
   selectedDocente: Docenti | null;

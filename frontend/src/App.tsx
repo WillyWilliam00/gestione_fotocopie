@@ -1,20 +1,22 @@
-import AppLayout from "@/components/AppLayout";
+import { lazy, Suspense, useRef } from "react";
+import AppLayout from "@/components/layout/AppLayout";
 import { BrowserRouter, Route, Routes, Navigate } from "react-router-dom";
-import RegistraCopie from "./components/RegistraCopie";
-import GestioneDocenti from "./components/GestioneDocenti";
-import GestioneUtenze from "./components/GestioneUtenze";
-import VisualizzaRegistrazioni from "./components/VisualizzaRegistrazioni";
-import ProfiloUtente from "./components/ProfiloUtente";
-import Login from "./components/Login";
-import Register from "./components/Register";
-import LandingPage from "./components/LandingPage";
-import NotFound from "./components/NotFound";
-import ProtectedRoute from "./components/ProtectedRoute";
-import PublicRoute from "./components/PublicRoute";
-import ErrorBoundary from "./components/ErrorBoundary";
+import ProtectedRoute from "./components/auth/ProtectedRoute";
+import PublicRoute from "./components/auth/PublicRoute";
+import ErrorBoundary from "./components/common/ErrorBoundary";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useRef } from "react";
 import { useAuthStore } from "./store/auth-store.js";
+
+// Code splitting: le pagine vengono caricate solo quando servono
+const LandingPage = lazy(() => import("./components/landing/LandingPage"));
+const Login = lazy(() => import("./components/auth/Login"));
+const Register = lazy(() => import("./components/auth/Register"));
+const RegistraCopie = lazy(() => import("./components/RegistraCopie"));
+const GestioneDocenti = lazy(() => import("./components/gestione-docenti/GestioneDocenti"));
+const GestioneUtenze = lazy(() => import("./components/gestione-utenze/GestioneUtenze"));
+const VisualizzaRegistrazioni = lazy(() => import("./components/visualizza-registrazioni/VisualizzaRegistrazioni"));
+const ProfiloUtente = lazy(() => import("./components/profilo/ProfiloUtente"));
+const NotFound = lazy(() => import("./components/common/NotFound"));
 
 export function App() {
   const isInitializing = useAuthStore((state) => state.isInitializing);
@@ -42,11 +44,18 @@ export function App() {
     );
   }
 
+  const PageFallback = () => (
+    <div className="min-h-[50vh] flex items-center justify-center">
+      <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" />
+    </div>
+  );
+
   return (
     <ErrorBoundary>
       <QueryClientProvider client={queryClientRef.current}>
         <BrowserRouter>
-          <Routes>
+          <Suspense fallback={<PageFallback />}>
+            <Routes>
             {/* Route pubbliche */}
             <Route path="/" element={<LandingPage />} />
             <Route
@@ -109,6 +118,7 @@ export function App() {
             {/* Route catch-all per 404 */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+          </Suspense>
         </BrowserRouter>
       </QueryClientProvider>
     </ErrorBoundary>

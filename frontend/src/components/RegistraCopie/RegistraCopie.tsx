@@ -3,13 +3,13 @@ import { useQueryClient } from "@tanstack/react-query";
 import { ArrowLeftIcon, CameraIcon, SearchIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { InputGroup, InputGroupAddon, InputGroupInput } from "@/components/ui/input-group";
-import HeaderSection from "../HeaderSection";
-import ErrorBoundary from "../ErrorBoundary";
+import HeaderSection from "@/components/layout/HeaderSection";
+import ErrorBoundary from "@/components/common/ErrorBoundary";
 import RegistraCopieContent from "./RegistraCopieContent";
 import RegistraCopieSkeleton from "./RegistraCopieSkeleton";
 import RegistraCopieErrorFallback from "./RegistraCopieErrorFallback";
 import { useDebouncedValue } from "@/hooks/use-debounced-value.js";
-import { Button } from "../ui/button.js";
+import { Button } from "@/components/ui/button";
 
 const SEARCH_DEBOUNCE_MS = 300;
 

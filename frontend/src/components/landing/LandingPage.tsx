@@ -1,13 +1,13 @@
 import LandingHeader from "./LandingHeader";
-import HeroSection from "./landing/HeroSection";
-import ProblemSection from "./landing/ProblemSection";
-import BenefitsSection from "./landing/BenefitsSection";
-import FeaturesSection from "./landing/FeaturesSection";
-import SecurityFreeSection from "./landing/SecurityFreeSection";
-import StatsSection from "./landing/StatsSection";
-import HowItWorksSection from "./landing/HowItWorksSection";
-import FAQSection from "./landing/FAQSection";
-import CTASection from "./landing/CTASection";
+import HeroSection from "./HeroSection";
+import ProblemSection from "./ProblemSection";
+import BenefitsSection from "./BenefitsSection";
+import FeaturesSection from "./FeaturesSection";
+import SecurityFreeSection from "./SecurityFreeSection";
+import StatsSection from "./StatsSection";
+import HowItWorksSection from "./HowItWorksSection";
+import FAQSection from "./FAQSection";
+import CTASection from "./CTASection";
 import LandingFooter from "./LandingFooter";
 
 export default function LandingPage() {

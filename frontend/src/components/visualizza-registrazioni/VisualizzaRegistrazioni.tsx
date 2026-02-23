@@ -1,5 +1,5 @@
 import { FileIcon, DeleteIcon } from "@hugeicons/core-free-icons";
-import HeaderSection from "./HeaderSection";
+import HeaderSection from "@/components/layout/HeaderSection";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Dialog, DialogHeader, DialogContent, DialogDescription, DialogTitle, DialogClose, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogContent, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from "@/components/ui/alert-dialog";
@@ -8,12 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Field, FieldLabel, FieldContent } from "@/components/ui/field";
 import { VisualizzaRegistrazioniContent } from "./VisualizzaRegistrazioniContent";
-import { type Registrazioni } from "./table/columns";
+import { type Registrazioni } from "@/components/table/columns";
 import { useState, Suspense } from "react";
 import { useForm } from "@tanstack/react-form";
 import { formatError } from "@/lib/utils";
 import { useUpdateRegistrazione, useDeleteRegistrazione } from "@/hooks/use-registrazioni";
-import { modifyRegistrazioneFormSchema } from "../../../shared/validation";
+import { modifyRegistrazioneFormSchema } from "@shared/validation";
 
 type DialogMode = 'view' | 'edit' | null;
 

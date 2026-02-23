@@ -1,5 +1,5 @@
 
-import { useAuthStore } from '../store/auth-store.js';
+import { useAuthStore } from "@/store/auth-store";
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -7,11 +7,11 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { useEffect, useState } from 'react';
 import { AlertDialog, AlertDialogCancel, AlertDialogFooter } from '@/components/ui/alert-dialog.js';
-import { AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle } from './ui/alert-dialog.js';
+import { AlertDialogContent, AlertDialogDescription, AlertDialogHeader, AlertDialogMedia, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { HugeiconsIcon } from '@hugeicons/react';
 import { DeleteIcon } from '@hugeicons/core-free-icons';
-import { DialogContent, DialogDescription, DialogHeader, DialogTitle } from './ui/dialog.js';
-import { Dialog } from './ui/dialog.js';
+import { DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog } from '@/components/ui/dialog';
 import { useDeleteIstituto } from '@/hooks/use-istituto.js';
 import { formatError } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';

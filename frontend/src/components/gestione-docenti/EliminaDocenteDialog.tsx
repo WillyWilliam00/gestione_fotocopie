@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { DeleteIcon } from "@hugeicons/core-free-icons";
-import { type Docenti } from "./table/columns";
+import { type Docenti } from "@/components/table/columns";
 import { formatError } from "@/lib/utils";
 import { useDeleteDocente } from "@/hooks/use-docenti";
 

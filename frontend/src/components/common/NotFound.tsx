@@ -2,7 +2,7 @@ import { Link } from "react-router-dom";
 import { CameraIcon, HomeIcon } from "@hugeicons/core-free-icons";
 import { HugeiconsIcon } from "@hugeicons/react";
 import { Button } from "@/components/ui/button";
-import Footer from "./Footer";
+import Footer from "@/components/layout/Footer";
 import { useAuthStore } from "@/store/auth-store";
 
 /**
