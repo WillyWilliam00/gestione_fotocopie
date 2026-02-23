@@ -12,7 +12,7 @@ export default function AppLayout() {
         <SidebarProvider>
             <AppSidebar />
             <Header />  
-            <main className="flex-1 pt-14 ">
+            <main className="flex-1 min-w-0 overflow-x-hidden pt-14">
                 <Outlet />
             </main>
             <Footer />

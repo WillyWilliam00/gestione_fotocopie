@@ -61,15 +61,15 @@ export function DataTable<TData, TValue>({
   return (
     <>
 
-      <div className="overflow-hidden rounded-md border mt-6 mx-4">
-        <Table>
+      <div className="rounded-md border mt-6 mx-4 max-h-[calc(100vh-25rem)] w-full max-w-full min-w-0 overflow-x-auto overflow-y-auto">
+        <Table noWrapper className="min-w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="">
+              <TableRow key={headerGroup.id} className="border-0">
                 {headerGroup.headers.map((header) => {
                   const isLastHeader = header.index === headerGroup.headers.length - 1;
                   return (
-                    <TableHead key={header.id} className={cn(header.column.columnDef.header === "Azioni" && "text-right", !isLastHeader && "border-r", "text-gray-500 font-bold")}>
+                    <TableHead key={header.id} className={cn(header.column.columnDef.header === "Azioni" && "text-right", !isLastHeader && "border-r", "text-gray-500 bg-white after:content-[''] after:absolute after:bottom-0 after:left-0 after:right-0 after:block after:h-px after:bg-gray-200 font-bold sticky top-0 ")}>
                       {header.isPlaceholder
                         ? null
                         : flexRender(

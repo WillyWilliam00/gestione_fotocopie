@@ -2,14 +2,23 @@ import * as React from "react"
 
 import { cn } from "@/lib/utils"
 
-function Table({ className, ...props }: React.ComponentProps<"table">) {
+interface TableProps extends React.ComponentProps<"table"> {
+  /** Se true, non avvolge la table in un div (utile per sticky header con scroll nel contenitore padre) */
+  noWrapper?: boolean
+}
+
+function Table({ className, noWrapper, ...props }: TableProps) {
+  const tableEl = (
+    <table
+      data-slot="table"
+      className={cn("w-full caption-bottom text-sm", className)}
+      {...props}
+    />
+  )
+  if (noWrapper) return tableEl
   return (
     <div data-slot="table-container" className="relative w-full overflow-x-auto">
-      <table
-        data-slot="table"
-        className={cn("w-full caption-bottom text-sm", className)}
-        {...props}
-      />
+      {tableEl}
     </div>
   )
 }
@@ -18,7 +27,7 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
   return (
     <thead
       data-slot="table-header"
-      className={cn("[&_tr]:border-b", className)}
+      className={cn("", className)}
       {...props}
     />
   )
