@@ -7,6 +7,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import type { Utente } from "../../../../shared/types.js";
 
 export type Docenti = {
+    id: number;
     nome: string;
     cognome: string;
     copieEffettuate: number;
@@ -24,6 +25,27 @@ export type UtenzeActions = {
     onView?: (utenza: Utente) => void;
     onEdit?: (utenza: Utente) => void;
     onDelete?: (utenza: Utente) => void;
+}
+
+export type Registrazioni = {
+    id: number;
+    docenteId: number;
+    copieEffettuate: number;
+    istitutoId: number;
+    utenteId: string | null;
+    note: string | null;
+    createdAt: Date;
+    updatedAt: Date;
+    docenteNome: string | null;
+    docenteCognome: string | null;
+    utenteUsername: string | null;
+    utenteEmail: string | null;
+}
+
+export type RegistrazioniActions = {
+    onView?: (registrazione: Registrazioni) => void;
+    onEdit?: (registrazione: Registrazioni) => void;
+    onDelete?: (registrazione: Registrazioni) => void;
 }
 
 // Factory per le colonne dei docenti, così possiamo iniettare le callback dal componente feature
@@ -221,4 +243,139 @@ export const createColumnsUtenze = (actions: UtenzeActions = {}): ColumnDef<Uten
             );
         },
     },
+];
+
+// Factory per le colonne delle registrazioni copie
+export const createColumnsRegistrazioni = (actions: RegistrazioniActions = {}): ColumnDef<Registrazioni>[] => [
+    {
+        header: ({column}) => {
+            return (
+                <button className="flex items-center gap-2 text-md cursor-pointer" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Data/Ora 
+                    <HugeiconsIcon icon={ArrowUpDownIcon} strokeWidth={2} className="size-4" />   
+                </button>
+            )
+        },
+        accessorKey: "createdAt",
+        cell: ({ row }) => {
+            const date = new Date(row.original.createdAt);
+            return date.toLocaleString('it-IT', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        },
+    },
+    {
+        header: ({column}) => {
+            return (
+                <button className="flex items-center gap-2 text-md cursor-pointer" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Docente 
+                    <HugeiconsIcon icon={ArrowUpDownIcon} strokeWidth={2} className="size-4" />   
+                </button>
+            )
+        },
+        accessorKey: "docenteNome",
+        cell: ({ row }) => {
+            const nome = row.original.docenteNome || '';
+            const cognome = row.original.docenteCognome || '';
+            return nome && cognome ? `${nome} ${cognome}` : '-';
+        },
+    },
+    {
+        header: ({column}) => {
+            return (
+                <button className="flex items-center gap-2 text-md cursor-pointer" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Copie Effettuate 
+                    <HugeiconsIcon icon={ArrowUpDownIcon} strokeWidth={2} className="size-4" />   
+                </button>
+            )
+        },
+        accessorKey: "copieEffettuate",
+    },
+    {
+        header: ({column}) => {
+            return (
+                <button className="flex items-center gap-2 text-md cursor-pointer" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Utente 
+                    <HugeiconsIcon icon={ArrowUpDownIcon} strokeWidth={2} className="size-4" />   
+                </button>
+            )
+        },
+        accessorKey: "utenteUsername",
+        cell: ({ row }) => {
+            const { utenteUsername, utenteEmail } = row.original;
+            if (utenteUsername) return utenteUsername;
+            if (utenteEmail) return utenteEmail;
+            return '-';
+        },
+    },
+    {
+        header: ({column}) => {
+            return (
+                <button className="flex items-center gap-2 text-md cursor-pointer" onClick={() => column.toggleSorting(column.getIsSorted() === "asc")}>
+                    Note 
+                    <HugeiconsIcon icon={ArrowUpDownIcon} strokeWidth={2} className="size-4" />   
+                </button>
+            )
+        },
+        accessorKey: "note",
+        cell: ({ row }) => {
+            return row.original.note || '-';
+        },
+    },
+    {
+        id: "azioni",
+        header: "Azioni",
+        cell: ({ row }) => {
+            const registrazione = row.original;
+            const { onView, onEdit, onDelete } = actions;
+
+            return (
+                <div className="flex items-center justify-end gap-2">
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                            if (onView) {
+                                onView(registrazione);
+                            } else {
+                                console.log("Visualizza registrazione:", registrazione);
+                            }
+                        }}
+                    >
+                        <HugeiconsIcon icon={EyeIcon} strokeWidth={2} className="size-4" />
+                    </Button>
+                    <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                            if (onEdit) {
+                                onEdit(registrazione);
+                            } else {
+                                console.log("Modifica registrazione:", registrazione);
+                            }
+                        }}
+                    >
+                        <HugeiconsIcon icon={EditIcon} strokeWidth={2} className="size-4" />
+                    </Button>
+                    <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => {
+                            if (onDelete) {
+                                onDelete(registrazione);
+                            } else {
+                                console.log("Elimina registrazione:", registrazione);
+                            }
+                        }}
+                    >
+                        <HugeiconsIcon icon={DeleteIcon} strokeWidth={2} className="size-4" />
+                    </Button>
+                </div>
+            );
+        },
+    }
 ];

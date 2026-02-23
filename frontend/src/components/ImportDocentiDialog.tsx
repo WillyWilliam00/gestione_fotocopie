@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import { AxiosError } from "axios";
+import { formatError } from "@/lib/utils";
 import {
   Dialog,
   DialogContent,
@@ -26,6 +26,7 @@ export function ImportDocentiDialog({ open, onOpenChange }: ImportDocentiDialogP
   const [parsingError, setParsingError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const bulkImport = useBulkImportDocenti();
+  
 
   const handleClose = () => {
     setImportPreview(null);
@@ -77,12 +78,7 @@ export function ImportDocentiDialog({ open, onOpenChange }: ImportDocentiDialogP
   const getImportErrorMessage = (): string | null => {
     if (parsingError) return parsingError;
     if (!bulkImport.isError || !bulkImport.error) return null;
-    const err = bulkImport.error;
-    if (err instanceof AxiosError) {
-      return (err.response?.data?.error as string) || err.message;
-    }
-    if (err instanceof Error) return err.message;
-    return "Errore durante l'import.";
+    return formatError(bulkImport.error, "Errore durante l'import.");
   };
   const importErrorMessage = getImportErrorMessage();
 

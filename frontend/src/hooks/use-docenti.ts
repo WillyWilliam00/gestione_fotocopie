@@ -241,6 +241,7 @@ export function useDeleteAllDocenti() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['docenti'] });
+      queryClient.invalidateQueries({ queryKey: ['registrazioni'] });
     },
   });
 }
@@ -265,6 +266,7 @@ export function useBulkImportDocenti() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['docenti'] });
+      queryClient.invalidateQueries({ queryKey: ['registrazioni'] });
     },
   });
 }

@@ -1,195 +1,146 @@
 import {
-    type ColumnDef,
-    flexRender,
-    type ColumnFiltersState,
-    getCoreRowModel,
-    useReactTable,
-    getSortedRowModel,
-    getFilteredRowModel,
-    type SortingState,
+  type ColumnDef,
+  flexRender,
+  getCoreRowModel,
+  useReactTable,
+  getSortedRowModel,
+  type SortingState,
 } from "@tanstack/react-table"
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "../ui/table"
 import { useState } from "react";
-import { InputGroup, InputGroupAddon, InputGroupInput } from "../ui/input-group";
-import { File, Plus, SearchIcon, FileIcon } from "@hugeicons/core-free-icons";
-import { HugeiconsIcon } from "@hugeicons/react";
-import { Field, FieldGroup, FieldLabel } from "../ui/field";
-import { Button } from "../ui/button";
 import {
-    Pagination,
-    PaginationContent,
-    PaginationItem,
-    PaginationLink,
-    PaginationNext,
-    PaginationPrevious,
-    PaginationEllipsis,
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+  PaginationEllipsis,
 } from "../ui/pagination";
 import { cn } from "@/lib/utils";
+import { FieldLabel } from "../ui/field";
+import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
+import { Field } from "../ui/field";
 
 interface DataTableProps<TData, TValue> {
-    columns: ColumnDef<TData, TValue>[];
-    data: TData[];
-    tableType?: 'docenti' | 'utenze';
-    onAddClick?: () => void;
-    onImportClick?: () => void;
-    showAddButton?: boolean;
-    showImportButton?: boolean;
-    onPageChange?: (page: number) => void;
-    pagination?: {
-        page: number;
-        pageSize: number;
-        totalItems: number;
-        totalPages: number;
-        hasNextPage: boolean;
-        hasPreviousPage: boolean;
-    };
+  columns: ColumnDef<TData, TValue>[];
+  data: TData[];
+  tableType?: 'docenti' | 'utenze' | 'registrazioni';
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (pageSize: string) => void;
+  pagination?: {
+    page: number;
+    pageSize: number;
+    totalItems: number;
+    totalPages: number;
+    hasNextPage: boolean;
+    hasPreviousPage: boolean;
+  };
 }
 
 export function DataTable<TData, TValue>({
-    columns,
-    data,
-    tableType = 'docenti',
-    onAddClick,
-    onImportClick,
-    showAddButton = false,
-    showImportButton = false,
-    onPageChange,
-    pagination,
+  columns,
+  data,
+  tableType = 'docenti',
+  onPageChange,
+  onPageSizeChange,
+  pagination,
 }: DataTableProps<TData, TValue>) {
-    const [sorting, setSorting] = useState<SortingState>([])
-    const [columnFilters, setColumnFilters] = useState<ColumnFiltersState>([])
-    const table = useReactTable({
-        data,
-        columns,
-        onSortingChange: setSorting,
-        onColumnFiltersChange: setColumnFilters,
-        getFilteredRowModel: getFilteredRowModel(),
-        getSortedRowModel: getSortedRowModel(),
-        state: {
-            sorting,
-            columnFilters,
-        },
-        getCoreRowModel: getCoreRowModel(),
-    })
-    return (
-        <div className="p-4 ">
-          
-                <div className="flex flex-row gap-2 items-end justify-between">
-                {tableType === "docenti" && (
-                    <FieldGroup className="flex flex-row gap-2 max-w-xl">
-                        <Field className="flex-1">
-                            <FieldLabel htmlFor="nome-input">Cerca docente per nome...</FieldLabel>
-                            <InputGroup>
-                                <InputGroupInput id="nome-input" value={(table.getColumn("nome")?.getFilterValue() as string) ?? ""} onChange={(event) =>
-                                    table.getColumn("nome")?.setFilterValue(event.target.value)
-                                } placeholder="Marco..." />
-                                <InputGroupAddon align="inline-start">
-                                    <HugeiconsIcon icon={SearchIcon} strokeWidth={2} className="size-4" />
-                                </InputGroupAddon>
-                            </InputGroup>
-                        </Field>
-                        <Field className="flex-1">
-                            <FieldLabel htmlFor="cognome-input">Cerca docente per cognome...</FieldLabel>
-                            <InputGroup>
-                                <InputGroupInput id="cognome-input" value={(table.getColumn("cognome")?.getFilterValue() as string) ?? ""} onChange={(event) =>
-                                    table.getColumn("cognome")?.setFilterValue(event.target.value)
-                                } placeholder="Rossi..." />
-                                <InputGroupAddon align="inline-start">
-                                    <HugeiconsIcon icon={SearchIcon} strokeWidth={2} className="size-4" />
-                                </InputGroupAddon>
-                            </InputGroup>
-                        </Field>
-                    </FieldGroup>
-                )}
-                <div className={cn("flex flex-row gap-2", tableType === "utenze" && "ml-auto")}>
-                    {showAddButton && onAddClick && tableType === 'docenti' && (
-                        <Button className="mt-4" variant="default" onClick={onAddClick}>
-                            Aggiungi docente
-                            <HugeiconsIcon icon={Plus} strokeWidth={2} className="size-4" />
-                        </Button>
-                    )}
-                    {showImportButton && onImportClick && tableType === 'docenti' && (
-                        <Button className="mt-4" variant="outline" onClick={onImportClick}>
-                            Importa file
-                            <HugeiconsIcon icon={FileIcon} strokeWidth={2} className="size-4" />
-                        </Button>
-                    )}
-                    <Button className="mt-4" variant={tableType === 'docenti' ? 'default' : 'outline'}>
-                        Esporta in Excel
-                        <HugeiconsIcon icon={File} strokeWidth={2} className="size-4" />
-                    </Button>
-                    {tableType === 'utenze' && onAddClick && showAddButton && (
-                        <Button className="mt-4" variant="default" onClick={onAddClick}>
-                            Aggiungi utenza
-                            <HugeiconsIcon icon={Plus} strokeWidth={2} className="size-4" />
-                        </Button>
-                    )}
-                </div>
-                </div>
+  const [sorting, setSorting] = useState<SortingState>([]);
 
+  const table = useReactTable({
+    data,
+    columns,
+    onSortingChange: setSorting,
+    getSortedRowModel: getSortedRowModel(),
+    state: { sorting },
+    getCoreRowModel: getCoreRowModel(),
+  });
 
-       
-            <div className="overflow-hidden rounded-md border mt-6">
-                <Table>
-                    <TableHeader>
-                        {table.getHeaderGroups().map((headerGroup) => (
-                            <TableRow key={headerGroup.id} className="">
-                                {headerGroup.headers.map((header) => {
-                                    const isLastHeader = header.index === headerGroup.headers.length - 1;
-                                    return (
-                                        <TableHead key={header.id} className={cn(header.column.columnDef.header === "Azioni" && "text-right", !isLastHeader && "border-r", "text-gray-500 font-bold")}>
-                                            {header.isPlaceholder
-                                                ? null
-                                                : flexRender(
-                                                    header.column.columnDef.header,
-                                                    header.getContext()
-                                                )}
-                                        </TableHead>
-                                    )
-                                })}
-                            </TableRow>
-                        ))}
-                    </TableHeader>
-                    <TableBody>
-                        {table.getRowModel().rows?.length ? (
-                            table.getRowModel().rows.map((row) => (
-                                <TableRow
-                                    key={row.id}
-                                    className=""
-                                    data-state={row.getIsSelected() && "selected"}
-                                >
-                                    {row.getVisibleCells().map((cell, index) => {
-                                        const isLastCell = index === row.getVisibleCells().length - 1;
-                                        return (
-                                            <TableCell 
-                                                key={cell.id} 
-                                                className={cn(
-                                                    "text-primary",
-                                                    !isLastCell && "border-r"
-                                                )}
-                                            >
-                                                {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                                            </TableCell>
-                                        );
-                                    })}
-                                </TableRow>
-                            ))
-                        ) : (
-                            <TableRow>
-                                <TableCell colSpan={columns.length} className="h-24 ">
-                                    No results.
-                                </TableCell>
-                            </TableRow>
+  return (
+    <>
+
+      <div className="overflow-hidden rounded-md border mt-6 mx-4">
+        <Table>
+          <TableHeader>
+            {table.getHeaderGroups().map((headerGroup) => (
+              <TableRow key={headerGroup.id} className="">
+                {headerGroup.headers.map((header) => {
+                  const isLastHeader = header.index === headerGroup.headers.length - 1;
+                  return (
+                    <TableHead key={header.id} className={cn(header.column.columnDef.header === "Azioni" && "text-right", !isLastHeader && "border-r", "text-gray-500 font-bold")}>
+                      {header.isPlaceholder
+                        ? null
+                        : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext()
                         )}
-                    </TableBody>
-                </Table>
-            </div>
-            {pagination && onPageChange && (
+                    </TableHead>
+                  )
+                })}
+              </TableRow>
+            ))}
+          </TableHeader>
+          <TableBody className="">
+            {table.getRowModel().rows?.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow
+                  key={row.id}
+                  className=""
+                  data-state={row.getIsSelected() && "selected"}
+                >
+                  {row.getVisibleCells().map((cell, index) => {
+                    const isLastCell = index === row.getVisibleCells().length - 1;
+                    return (
+                      <TableCell
+                        key={cell.id}
+                        className={cn(
+                          "text-primary",
+                          !isLastCell && "border-r"
+                        )}
+                      >
+                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      </TableCell>
+                    );
+                  })}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 ">
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
+          </TableBody>
+        </Table>
+      </div>
+      {pagination && onPageChange && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 text-sm text-muted-foreground">
-          <span className="w-full">
-            Pagina {pagination.page} di {pagination.totalPages} ({pagination.totalItems} {tableType === "docenti" ? "docenti" : "utenze"})
-          </span>
+          <div className="flex flex-row gap-4 w-1/2 ms-4  items-center">
+            
+            <Field orientation="horizontal" className="flex justify-start w-fit">
+              <FieldLabel htmlFor="select-rows-per-page" className="font-normal">Righe per pagina</FieldLabel>
+              <Select defaultValue={pagination?.pageSize.toString() ?? "25"} onValueChange={onPageSizeChange}>
+                <SelectTrigger className="w-20" id="select-rows-per-page">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent align="start">
+                  <SelectGroup>
+                    <SelectItem value="10">10</SelectItem>
+                    <SelectItem value="25">25</SelectItem>
+                    <SelectItem value="50">50</SelectItem>
+                    <SelectItem value="100">100</SelectItem>
+                  </SelectGroup>
+                </SelectContent>
+              </Select>
+            </Field>
+            <span className="whitespace-nowrap text-sm">
+              Pagina {pagination.page} di {pagination.totalPages} ({pagination.totalItems} {tableType === "docenti" ? "docenti" : tableType === "utenze" ? "utenze" : "registrazioni"})
+            </span>
+          </div>
+
           <Pagination>
             <PaginationContent>
               <PaginationItem>
@@ -243,6 +194,6 @@ export function DataTable<TData, TValue>({
           </Pagination>
         </div>
       )}
-        </div>
-    )
+    </>
+  )
 }
