@@ -53,7 +53,6 @@ Il frontend di **ScriptaScuola** è una **single page application** in **React +
       - `/gestione-utenze` → gestione utenze (admin/collaboratori) (`GestioneUtenze`).
       - `/visualizza-registrazioni` → visualizzazione registrazioni copie (`VisualizzaRegistrazioni`).
       - `/profilo` → profilo utente (`ProfiloUtente`).
-      - `/dashboard-insegnanti` → redirect verso `/gestione-docenti`.
     - Route catch-all `*` → pagina 404 (`NotFound`).
 
 - Componenti principali (indicativi):

@@ -85,10 +85,7 @@ export function App() {
               }
             >
               <Route path="/registra-copie" element={<RegistraCopie />} />
-              <Route
-                path="/dashboard-insegnanti"
-                element={<Navigate to="/gestione-docenti" replace />}
-              />
+              
               <Route
                 path="/gestione-docenti"
                 element={
