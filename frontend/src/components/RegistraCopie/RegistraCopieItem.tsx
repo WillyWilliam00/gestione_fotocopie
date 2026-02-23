@@ -17,7 +17,7 @@ import { useCreateRegistrazione } from "@/hooks/use-registrazioni.js";
 import { useAuthStore } from "@/store/auth-store.js";
 import { createRegistrazioneFormSchema } from "../../../../shared/validation.js";
 import type { DocenteConRegistrazioni } from "../../../../shared/types.js";
-import { cn } from "@/lib/utils.js";
+import { cn, formatError } from "@/lib/utils.js";
 
 export interface RegistraCopieItemProps {
   docente: DocenteConRegistrazioni;
@@ -79,9 +79,7 @@ export default function RegistraCopieItem({
             setSelectedDocenteId(null);
           },
           onError: (err) => {
-            // Gestione errore server - mostriamo l'errore separatamente
-            const message = err instanceof Error ? err.message : "Errore durante la registrazione.";
-            setServerError(message);
+            setServerError(formatError(err, "Errore durante la registrazione."));
           },
         }
       );
