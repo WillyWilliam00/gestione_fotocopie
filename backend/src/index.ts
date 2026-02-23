@@ -7,7 +7,7 @@ import authenticationRoutes from './route/authentication.js';
 import docentiRoutes from './route/docenti.js';
 import utentiRoutes from './route/utenti.js';
 import registrazioniCopieRoutes from './route/registrazioniCopie.js';
-
+import istitutiRoutes from './route/istituti.js';
 const app = express();
 // Porta del backend: default 3001 per evitare conflitto con frontend Vite su 3000
 const PORT = process.env.PORT || 3001;
@@ -27,6 +27,9 @@ app.use('/api/utenti', authMiddleware, tenantStoreMiddleware, requireRole('admin
 
 // Registrazioni Copie: accessibili a admin e collaboratori
 app.use('/api/registrazioni-copie', authMiddleware, tenantStoreMiddleware, registrazioniCopieRoutes);
+
+// Istituti: accessibili a admin
+app.use('/api/istituti', authMiddleware, tenantStoreMiddleware, requireRole('admin'), istitutiRoutes);
 app.use(errorHandler);
 
 // Esporta l'app per i test di integrazione

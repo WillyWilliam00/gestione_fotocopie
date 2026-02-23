@@ -1,6 +1,6 @@
 import { and, asc, desc, eq, ilike, ne, type AnyColumn } from "drizzle-orm";
-import { bulkImportDocentiSchema, createUtenteSchema, docentiQuerySchema, insertDocenteSchema, insertRegistrazioneSchema, modifyDocenteSchema, modifyUtenteSchema, registrazioniCopieQuerySchema, utentiQuerySchema, type BulkImportDocenti, type CreateUtente, type DocentiQuery, type InsertDocente, type InsertRegistrazione, type ModifyDocente, type ModifyUtente, type RegistrazioniCopieQuery, type UtentiQuery } from "../../../shared/validation.js"
-import { docenti, registrazioniCopie, utenti } from "./schema.js";
+import { bulkImportDocentiSchema, createUtenteSchema, docentiQuerySchema, insertDocenteSchema, insertRegistrazioneSchema, modifyDocenteSchema, modifyRegistrazioneSchema, modifyUtenteSchema, registrazioniCopieQuerySchema, utentiQuerySchema, type BulkImportDocenti, type CreateUtente, type DocentiQuery, type InsertDocente, type InsertRegistrazione, type ModifyDocente, type ModifyRegistrazione, type ModifyUtente, type RegistrazioniCopieQuery, type UtentiQuery } from "../../../shared/validation.js"
+import { docenti, istituti, registrazioniCopie, utenti } from "./schema.js";
 import type { DocentiPaginatedResponse, DocentiSort, SortOrder, UtentiPaginatedResponse, UtentiSort, Utente, RegistrazioniCopieSort, RegistrazioniCopiePaginatedResponse } from "../../../shared/types.js";
 import { SQL, sql } from "drizzle-orm";
 import type { ErrorWithStatus } from "../middleware/auth.js";
@@ -239,12 +239,12 @@ export const createTenantStore = (istitutoId: number, db: DbInstance | Transacti
     return {
         docenti: docentiStore,
         utenti: {
-            getPaginated: async(query: UtentiQuery) => {
+            getPaginated: async(query: UtentiQuery, myUserId: string) => {
                 const { page, pageSize, identifier, ruolo, sortField, sortOrder } = utentiQuerySchema.parse(query);
                 const offset = (page - 1 ) * pageSize;
                 const isEmail = identifier ? isEmailIdentifier(identifier) : false;
 
-                const condition = [eq(utenti.istitutoId, istitutoId)];
+                const condition = [eq(utenti.istitutoId, istitutoId), ne(utenti.id, myUserId)];
                 if (identifier) {
                     if (isEmail) condition.push(ilike(utenti.email, `%${identifier}%`));
                     else condition.push(ilike(utenti.username, `%${identifier}%`));
@@ -410,8 +410,23 @@ export const createTenantStore = (istitutoId: number, db: DbInstance | Transacti
                 const sortKey = (sortField || 'createdAt') as RegistrazioniCopieSort['field'];
                 const orderByColumn = sortMap[sortKey]; 
                 
-                const registrazioniPaginated = await db.select()
+                const registrazioniPaginated = await db.select({
+                    id: registrazioniCopie.id,
+                    docenteId: registrazioniCopie.docenteId,
+                    copieEffettuate: registrazioniCopie.copieEffettuate,
+                    istitutoId: registrazioniCopie.istitutoId,
+                    utenteId: registrazioniCopie.utenteId,
+                    note: registrazioniCopie.note,
+                    createdAt: registrazioniCopie.createdAt,
+                    updatedAt: registrazioniCopie.updatedAt,
+                    docenteNome: docenti.nome,
+                    docenteCognome: docenti.cognome,
+                    utenteUsername: utenti.username,
+                    utenteEmail: utenti.email,
+                })
                 .from(registrazioniCopie)
+                .leftJoin(docenti, eq(registrazioniCopie.docenteId, docenti.id))
+                .leftJoin(utenti, eq(registrazioniCopie.utenteId, utenti.id))
                 .where(and(...condition))
                 .limit(pageSize)
                 .offset(offset)
@@ -456,7 +471,74 @@ export const createTenantStore = (istitutoId: number, db: DbInstance | Transacti
                     return registrazione;
                 });
                 return result;
-            }, 
+            },
+            update: async(id: number, data: ModifyRegistrazione) => {
+                const validateData = modifyRegistrazioneSchema.parse(data);
+                const result = await db.transaction(async (tx: any) => {
+                    // Verifica che la registrazione esista e appartenga all'istituto
+                    const [registrazioneEsistente] = await tx.select()
+                        .from(registrazioniCopie)
+                        .where(and(
+                            eq(registrazioniCopie.id, id),
+                            eq(registrazioniCopie.istitutoId, istitutoId)
+                        ));
+                    
+                    if(!registrazioneEsistente) {
+                        const error = new Error('Registrazione non trovata') as ErrorWithStatus;
+                        error.status = 404;
+                        throw error;
+                    }
+
+                    // Ottieni il docente per verificare il limite
+                    const [docente] = await tx.select()
+                        .from(docenti)
+                        .where(and(
+                            eq(docenti.id, registrazioneEsistente.docenteId),
+                            eq(docenti.istitutoId, istitutoId)
+                        ));
+
+                    if(!docente) {
+                        const error = new Error('Docente non trovato') as ErrorWithStatus;
+                        error.status = 404;
+                        throw error;
+                    }
+
+                    // Calcola le copie totali del docente escludendo questa registrazione
+                    const [totaleCopie] = await tx.select({
+                        totale: sql<number>`COALESCE(SUM(${registrazioniCopie.copieEffettuate}), 0)::int`
+                    })
+                    .from(registrazioniCopie)
+                    .where(and(
+                        eq(registrazioniCopie.docenteId, docente.id),
+                        eq(registrazioniCopie.istitutoId, istitutoId),
+                    ));
+
+                    const nuoveCopieTotali = totaleCopie + validateData.copieEffettuate;
+
+                    // Verifica che non superi il limite
+                    if(nuoveCopieTotali > docente.limiteCopie) {
+                        const error = new Error(`Limite di copie superato. Il docente ha un limite di ${docente.limiteCopie} copie e ne ha già utilizzate ${totaleCopie}. Le nuove copie (${validateData.copieEffettuate}) porterebbero il totale a ${nuoveCopieTotali}.`) as ErrorWithStatus;
+                        error.status = 400;
+                        throw error;
+                    }
+
+                    // Aggiorna la registrazione
+                    const [registrazioneAggiornata] = await tx.update(registrazioniCopie)
+                        .set({
+                            copieEffettuate: validateData.copieEffettuate,
+                            note: validateData.note ?? null,
+                            updatedAt: new Date(),
+                        })
+                        .where(and(
+                            eq(registrazioniCopie.id, id),
+                            eq(registrazioniCopie.istitutoId, istitutoId)
+                        ))
+                        .returning();
+
+                    return registrazioneAggiornata;
+                });
+                return result;
+            },
             delete: async(id: number) => {
                 const [registrazioneEliminata] = await db.delete(registrazioniCopie)
                 .where(and(eq(registrazioniCopie.id, id), eq(registrazioniCopie.istitutoId, istitutoId)))
@@ -470,6 +552,21 @@ export const createTenantStore = (istitutoId: number, db: DbInstance | Transacti
             },
             deleteAll: async() => {
                 await db.delete(registrazioniCopie).where(eq(registrazioniCopie.istitutoId, istitutoId));
+            }
+        },
+        istituti: {
+            // Elimina l'istituto dell'utente autenticato (istitutoId dalla closure = token)
+            delete: async() => {
+                const [istitutoEliminato] = await db.delete(istituti).where(eq(istituti.id, istitutoId)).returning({id: istituti.id});
+                if(!istitutoEliminato) {
+                    const error = new Error('Istituto non trovato') as ErrorWithStatus;
+                    error.status = 404;
+                    throw error;
+                }
+                return {
+                    message: 'Istituto eliminato con successo',
+                    id: istitutoEliminato.id,
+                }
             }
         }
     }
