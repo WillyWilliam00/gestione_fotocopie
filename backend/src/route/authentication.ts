@@ -86,6 +86,15 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
         error.status = 401;
         throw error;
     }
+    
+    // Recupera dati istituto
+    const [istituto] = await db.select().from(istituti).where(eq(istituti.id, utente.istitutoId))
+    if (!istituto) {
+        const error = new Error('Istituto non trovato') as ErrorWithStatus;
+        error.status = 500;
+        throw error;
+    }
+    
     const token = jwt.sign(
         {userId: utente.id, ruolo: utente.ruolo, istitutoId: utente.istitutoId},
         JWT_SECRET,
@@ -108,6 +117,11 @@ router.post('/login', asyncHandler(async (req: Request, res: Response) => {
             email: utente.email,
             username: utente.username,
             ruolo: utente.ruolo,
+        },
+        istituto: {
+            id: istituto.id,
+            nome: istituto.nome,
+            codiceIstituto: istituto.codiceIstituto,
         }
     }
     res.status(200).json(response)
