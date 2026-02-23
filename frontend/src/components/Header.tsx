@@ -12,7 +12,7 @@ export default function Header() {
             isMobile ? "left-0" : (open ? "left-64" : "left-0")
         )}>
                 <SidebarTrigger className="" />
-                <h1 className="text-xl font-semibold text-primary ">Registro Fotocopie Scolastico</h1>
+                <h1 className="text-xl font-semibold text-primary ">ScriptaScuola</h1>
                 <HugeiconsIcon icon={UserIcon} strokeWidth={2}  className="text-primary"  />
             </header>
     )
