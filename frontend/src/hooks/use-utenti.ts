@@ -96,7 +96,7 @@ export function useUpdateUtente() {
  *
  * @returns Mutation con mutate, mutateAsync, isPending, error, ecc.
  */
-export function useDeleteUtente() {
+export function useDeleteUtente(onShowDialog?: () => void) {
   const queryClient = useQueryClient();
 
   return useMutation({
@@ -110,6 +110,7 @@ export function useDeleteUtente() {
     onSuccess: () => {
       // Invalida la cache degli utenti per forzare il refetch
       queryClient.invalidateQueries({ queryKey: ['utenti'] });
+      onShowDialog?.();
     },
   });
 }

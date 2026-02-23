@@ -17,39 +17,55 @@ import { formatError } from '@/lib/utils';
 import { useQueryClient } from '@tanstack/react-query';
 import { logout } from '@/lib/auth-api';
 import { useNavigate } from 'react-router-dom';
+import { useDeleteUtente } from '@/hooks/use-utenti';
+
+type DeleteDialogType = 'account' | 'istituto' | null;
 
 export default function ProfiloUtente() {
   const { utente, istituto } = useAuthStore();
-  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [deleteDialogType, setDeleteDialogType] = useState<DeleteDialogType>(null);
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
   const firtsTowLetters = utente?.email?.slice(0, 2).toUpperCase() ?? utente?.username?.slice(0, 2).toUpperCase();
   const isAdmin = utente?.ruolo === 'admin';
+  const userId = utente?.id;
   const [timeToLogout, setTimeToLogout] = useState(15);
   const queryClient = useQueryClient();
   const navigate = useNavigate();
+
   const openDialogLogout = () => {
     setTimeToLogout(5);
     setIsLogoutDialogOpen(true);
   };
+
   const { mutate: deleteIstituto, isPending: isDeleteIstitutoPending, isError: isDeleteIstitutoError, error: deleteIstitutoError, reset: resetDeleteIstituto } = useDeleteIstituto(openDialogLogout);
+  const { mutate: deleteUtente, isPending: isDeleteUtentePending, isError: isDeleteUtenteError, error: deleteUtenteError, reset: resetDeleteUtente } = useDeleteUtente(openDialogLogout);
+
   const openDialogDeleteIstituto = () => {
     resetDeleteIstituto();
-    setIsDeleteDialogOpen(true);
-  }
- 
+    setDeleteDialogType('istituto');
+  };
 
+  const openDialogDeleteAccount = () => {
+    resetDeleteUtente();
+    setDeleteDialogType('account');
+  };
 
+  const closeDeleteDialog = () => setDeleteDialogType(null);
 
-  const handleDeleteIstituto = () => {
-    deleteIstituto(undefined, {
-      onSuccess: () => {
-        setIsDeleteDialogOpen(false);
-      },
-    });
-  }
+  const handleDeleteConfirm = () => {
+    if (deleteDialogType === 'istituto') {
+      deleteIstituto(undefined, { onSuccess: closeDeleteDialog });
+    } else if (deleteDialogType === 'account') {
+      deleteUtente(userId ?? '', { onSuccess: closeDeleteDialog });
+    }
+  };
+
+  const isDeletePending = isDeleteIstitutoPending || isDeleteUtentePending;
+  const deleteError = deleteDialogType === 'istituto' ? deleteIstitutoError : deleteUtenteError;
+  const isDeleteError = deleteDialogType === 'istituto' ? isDeleteIstitutoError : isDeleteUtenteError;
 
   useEffect(() => {
-    if (!isLogoutDialogOpen) return;
+    if (!isLogoutDialogOpen ) return;
   
     const timer = setInterval(() => {
       setTimeToLogout((prev) => {
@@ -122,8 +138,27 @@ export default function ProfiloUtente() {
         </CardContent>
 
       </Card>
-
       {isAdmin && (
+        <>
+        <div className="container mx-auto p-6 max-w-2xl bg-red-500/10 mt-6 rounded-lg">
+          <div className=''>
+            <p className='text-sm text-red-500 font-medium'>
+              Elimina Account
+            </p>
+            <p className='text-sm text-muted-foreground mt-2'>
+              Attenzione: questa azione eliminerà il tuo account e tutti i tuoi dati, compresi i docenti e gli utenti.
+            </p>
+          </div>
+          <div className='mt-4'>
+            <Button className="w-full bg-red-500 text-white hover:bg-red-500/80" onClick={openDialogDeleteAccount}>
+              {isDeleteUtentePending ? 'Eliminazione in corso...' : 'Elimina Account'}
+            </Button>
+          </div>
+        </div>
+      
+     
+
+
         <div className="container mx-auto p-6 max-w-2xl bg-red-500/10 mt-6 rounded-lg">
           <div className=''>
             <p className='text-sm text-red-500 font-medium'>
@@ -139,51 +174,60 @@ export default function ProfiloUtente() {
             </Button>
           </div>
         </div>
+        </>
       )}
+      
 
-      <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+      <AlertDialog open={deleteDialogType !== null} onOpenChange={(open) => !open && closeDeleteDialog()}>
         <AlertDialogContent size="sm">
           <AlertDialogHeader>
             <AlertDialogMedia className="bg-destructive/10 text-destructive dark:bg-destructive/20 dark:text-destructive">
               <HugeiconsIcon icon={DeleteIcon} strokeWidth={2} />
             </AlertDialogMedia>
             <AlertDialogTitle>
-              Eliminare l'istituto {istituto?.nome}?
+              {deleteDialogType === 'istituto'
+                ? `Eliminare l'istituto ${istituto?.nome}?`
+                : 'Eliminare il tuo account?'}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Questa azione eliminerà l'istituto e tutti i suoi dati, compresi i docenti e gli utenti. Non può essere annullata.
+              {deleteDialogType === 'istituto'
+                ? "Questa azione eliminerà l'istituto e tutti i suoi dati, compresi i docenti e gli utenti. Non può essere annullata."
+                : "Questa azione eliminerà il tuo account e tutti i tuoi dati. Non può essere annullata."}
             </AlertDialogDescription>
-            {isDeleteIstitutoError && deleteIstitutoError && (
+            {isDeleteError && deleteError && (
               <p className="text-sm text-destructive px-6" role="alert">
-                {formatError(deleteIstitutoError, "Errore durante l'eliminazione dell'istituto")}
+                {formatError(deleteError, deleteDialogType === 'istituto' ? "Errore durante l'eliminazione dell'istituto" : "Errore durante l'eliminazione del tuo account")}
               </p>
             )}
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleteIstitutoPending} variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>Annulla</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeletePending} variant="outline" onClick={closeDeleteDialog}>
+              Annulla
+            </AlertDialogCancel>
             <Button
               variant="destructive"
               className="w-full"
-              onClick={handleDeleteIstituto}
-              disabled={isDeleteIstitutoPending}
+              onClick={handleDeleteConfirm}
+              disabled={isDeletePending}
             >
-              {isDeleteIstitutoPending ? 'Eliminazione in corso...' : 'Elimina'}
+              {isDeletePending ? 'Eliminazione in corso...' : 'Elimina'}
             </Button>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       <Dialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
-
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Istituto eliminato con successo</DialogTitle>
+            <DialogTitle>Disconnessione in corso <div className='w-full h-1 bg-primary/10 rounded-full animate-pulse' /></DialogTitle>
           </DialogHeader>
           <DialogDescription>
-            <p>L'istituto è stato eliminato con successo, verrai disconnesso tra:</p>
-            <p className="text-sm text-muted-foreground">
-              {timeToLogout} secondi
-            </p>
+            <div className='flex flex-col items-center justify-center'>
+              <p className='text-sm text-muted-foreground'>Verrai disconnesso tra:</p>
+              <p className="text-sm text-muted-foreground">
+                {timeToLogout} secondi
+              </p>
+            </div>
           </DialogDescription>
         </DialogContent>
       </Dialog>
