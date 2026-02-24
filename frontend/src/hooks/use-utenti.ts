@@ -24,7 +24,7 @@ import type { UtentiQuery, CreateUtente, ModifyUtente } from '../../../shared/va
  * @param query - Parametri di query per paginazione, filtri e ordinamento
  * @returns Query result con data, pagination, isLoading, isFetching, error, refetch, ecc.
  */
-export function useUtenti(query: UtentiQuery = { page: 1, pageSize: 20, sortOrder: 'asc' }) {
+export function useUtenti(query: UtentiQuery = { page: 1, pageSize: 20, sortField: 'ruolo', sortOrder: 'asc' }) {
   return useSuspenseQuery<UtentiPaginatedResponse>({
     queryKey: ['utenti', query],
     queryFn: async () => {

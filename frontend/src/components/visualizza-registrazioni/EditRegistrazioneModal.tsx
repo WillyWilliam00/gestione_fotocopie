@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+
 import {
   Dialog,
   DialogContent,
@@ -16,7 +16,7 @@ import type { Registrazioni } from "@/components/table/columns";
 import { formatError } from "@/lib/utils";
 import { useUpdateRegistrazione } from "@/hooks/use-registrazioni";
 import { useForm } from "@tanstack/react-form";
-import { modifyRegistrazioneFormSchema, type ModifyRegistrazione } from "@shared/validation";
+import { modifyRegistrazioneFormSchema } from "@shared/validation";
 
 interface EditRegistrazioneModalProps {
   selectedRegistrazione: Registrazioni | null;

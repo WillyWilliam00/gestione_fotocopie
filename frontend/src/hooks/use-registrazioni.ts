@@ -1,4 +1,4 @@
-import { useQuery, useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useSuspenseQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../lib/api.js';
 import type { RegistrazioniCopiePaginatedResponse } from '../../../shared/types.js';
 import type { RegistrazioniCopieQuery, InsertRegistrazione, ModifyRegistrazione } from '../../../shared/validation.js';
@@ -17,7 +17,7 @@ import type { RegistrazioniCopieQuery, InsertRegistrazione, ModifyRegistrazione 
  * @param query - Parametri di query per paginazione, filtri e ordinamento (stesso di useRegistrazioni)
  * @returns Query result con data, pagination, isFetching, refetch, ecc. (niente isLoading: il loading è gestito da Suspense)
  */
-export function useRegistrazioniSuspense(query: RegistrazioniCopieQuery = { page: 1, pageSize: 20, sortOrder: 'asc' }) {
+export function useRegistrazioniSuspense(query: RegistrazioniCopieQuery = { page: 1, pageSize: 20, sortField: 'createdAt', sortOrder: 'asc' }) {
   return useSuspenseQuery<RegistrazioniCopiePaginatedResponse>({
     queryKey: ['registrazioni', query],
     queryFn: async () => {

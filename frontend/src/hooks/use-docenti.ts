@@ -47,7 +47,7 @@ import type { BulkImportDocenti, DocentiQuery, InsertDocente, ModifyDocente } fr
  * @param query - Parametri di query per paginazione, filtri e ordinamento
  * @returns Query result con data, pagination, isLoading, isFetching, error, refetch, ecc.
  */
-export function useDocenti(query: DocentiQuery = { page: 1, pageSize: 20, sortOrder: 'asc' }) {
+export function useDocenti(query: DocentiQuery = { page: 1, pageSize: 20, sortField: 'createdAt', sortOrder: 'asc' }) {
   return useQuery<DocentiPaginatedResponse>({
     // --- queryKey: identifica questa query in modo univoco.
     // La cache e il refetch si basano su questa chiave. Se query cambia (es. page 1 → 2),
@@ -96,7 +96,7 @@ export function useDocenti(query: DocentiQuery = { page: 1, pageSize: 20, sortOr
  * @param query - Parametri di query per paginazione, filtri e ordinamento (stesso di useDocenti)
  * @returns Query result con data, pagination, isFetching, refetch, ecc. (niente isLoading: il loading è gestito da Suspense)
  */
-export function useDocentiSuspense(query: DocentiQuery = { page: 1, pageSize: 20, sortOrder: 'asc' }) {
+export function useDocentiSuspense(query: DocentiQuery = { page: 1, pageSize: 20, sortField: 'createdAt', sortOrder: 'asc' }) {
   return useSuspenseQuery<DocentiPaginatedResponse>({
     queryKey: ['docenti', query],
     queryFn: async () => {
@@ -125,7 +125,7 @@ export function useDocentiSuspense(query: DocentiQuery = { page: 1, pageSize: 20
  * @returns Infinite query con data.pages, fetchNextPage, hasNextPage, isFetchingNextPage, ecc.
  */
 export function useDocentiInfinite(
-  baseQuery: Omit<DocentiQuery, 'page'> = { pageSize: 20, sortOrder: 'asc' }
+  baseQuery: Omit<DocentiQuery, 'page'> = { pageSize: 20, sortField: 'createdAt', sortOrder: 'asc' }
 ) {
   const pageSize = baseQuery.pageSize ?? 20;
 
