@@ -252,9 +252,8 @@ export const createTenantStore = (istitutoId: number, db: DbInstance | Transacti
                 if (ruolo) condition.push(eq(utenti.ruolo, ruolo));
 
                 const sortMap: Record<UtentiSort['field'], AnyColumn | SQL> = {
-                    username: utenti.username,
-                    email: utenti.email,
                     ruolo: utenti.ruolo,
+                    identificativo: sql`COALESCE(${utenti.username}, ${utenti.email})`,
                 }
                 const sortKey = (sortField || 'ruolo') as UtentiSort['field'];
                 const orderByColumn = sortMap[sortKey];
@@ -413,6 +412,10 @@ export const createTenantStore = (istitutoId: number, db: DbInstance | Transacti
                     utenteId: registrazioniCopie.utenteId,
                     createdAt: registrazioniCopie.createdAt,
                     updatedAt: registrazioniCopie.updatedAt,
+                    docenteNome: docenti.nome,
+                    docenteCognome: docenti.cognome,
+                    copieEffettuate: registrazioniCopie.copieEffettuate,
+                    utente: sql`COALESCE(${utenti.username}, ${utenti.email})`,
                 }
                 const sortKey = (sortField || 'createdAt') as RegistrazioniCopieSort['field'];
                 const orderByColumn = sortMap[sortKey]; 
