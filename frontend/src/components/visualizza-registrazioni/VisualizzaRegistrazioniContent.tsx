@@ -2,6 +2,7 @@ import { createColumnsRegistrazioni, type Registrazioni } from "@/components/tab
 import { DataTable } from "@/components/table/DataTable";
 import { useRegistrazioniSuspense } from "@/hooks/use-registrazioni";
 import type { RegistrazioniCopieQuery } from "@shared/validation";
+import type { RegistrazioniCopieSort } from "@shared/types";
 
 export interface VisualizzaRegistrazioniContentProps {
   query: RegistrazioniCopieQuery;
@@ -10,6 +11,7 @@ export interface VisualizzaRegistrazioniContentProps {
   onView: (registrazione: Registrazioni) => void;
   onEdit: (registrazione: Registrazioni) => void;
   onDelete: (registrazione: Registrazioni) => void;
+  handleSortChange: (sortField: RegistrazioniCopieSort['field'], sortOrder: RegistrazioniCopieSort['order']) => void;
 }
 
 /** Contenuto che sospende fino al caricamento delle registrazioni; da usare dentro <Suspense>. */
@@ -19,10 +21,16 @@ export function VisualizzaRegistrazioniContent({
   onPageSizeChange,
   onView,
   onEdit,
+  handleSortChange,
   onDelete,
 }: VisualizzaRegistrazioniContentProps) {
   const { data } = useRegistrazioniSuspense(query);
-  const columns = createColumnsRegistrazioni({ onView, onEdit, onDelete });
+  const sortOptions = {
+    sortField: query.sortField,
+    sortOrder: query.sortOrder,
+    onSortChange: handleSortChange,
+  };
+  const columns = createColumnsRegistrazioni({ onView, onEdit, onDelete }, sortOptions);
   const tableData: Registrazioni[] = data.data.map((d) => ({
     id: d.id,
     docenteId: d.docenteId,

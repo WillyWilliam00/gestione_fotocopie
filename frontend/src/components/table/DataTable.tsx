@@ -61,7 +61,7 @@ export function DataTable<TData, TValue>({
   return (
     <>
 
-      <div className="rounded-md border mt-6 mx-4 max-h-[calc(100vh-25rem)] w-full max-w-full min-w-0 overflow-x-auto overflow-y-auto">
+      <div className="rounded-md border mt-4   max-h-[calc(100vh-25rem)] lg:max-h-[calc(100vh-22rem)] xl:max-h-[calc(100vh-25rem)] w-full max-w-full min-w-0 overflow-x-auto overflow-y-auto">
         <Table noWrapper className="min-w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
@@ -117,11 +117,10 @@ export function DataTable<TData, TValue>({
         </Table>
       </div>
       {pagination && onPageChange && (
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mt-4 text-sm text-muted-foreground">
-          <div className="flex flex-row gap-4 w-1/2 ms-4  items-center">
-            
-            <Field orientation="horizontal" className="flex justify-start w-fit">
-              <FieldLabel htmlFor="select-rows-per-page" className="font-normal">Righe per pagina</FieldLabel>
+        <div className="flex flex-row items-center justify-between gap-4 mt-4  text-muted-foreground">
+  
+            <Field  className="flex flex-col lg:flex-row justify-start w-fit">
+              <FieldLabel htmlFor="select-rows-per-page" className="text-xs whitespace-nowrap">Righe per pagina</FieldLabel>
               <Select defaultValue={pagination?.pageSize.toString() ?? "25"} onValueChange={onPageSizeChange}>
                 <SelectTrigger className="w-20" id="select-rows-per-page">
                   <SelectValue />
@@ -136,62 +135,66 @@ export function DataTable<TData, TValue>({
                 </SelectContent>
               </Select>
             </Field>
-            <span className="whitespace-nowrap text-sm">
+
+ 
+
+          <div className="flex flex-col gap-1 xl:flex-row items-end">
+            <Pagination>
+              <PaginationContent>
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => pagination.hasPreviousPage && onPageChange(pagination.page - 1)}
+                    aria-disabled={!pagination.hasPreviousPage}
+                    className={cn(!pagination.hasPreviousPage && "pointer-events-none opacity-50")}
+                   
+                  />
+                </PaginationItem>
+                {(() => {
+                  const { page, totalPages } = pagination;
+                  const pages: (number | "ellipsis")[] = [];
+                  if (totalPages <= 3) {
+                    for (let i = 1; i <= totalPages; i++) pages.push(i);
+                  } else {
+                    pages.push(1);
+                    if (page > 3) pages.push("ellipsis");
+                    for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) {
+                      if (!pages.includes(i)) pages.push(i);
+                    }
+                    if (page < totalPages - 2) pages.push("ellipsis");
+                    if (totalPages > 1) pages.push(totalPages);
+                  }
+                  return pages.map((p, i) =>
+                    p === "ellipsis" ? (
+                      <PaginationItem key={`ellipsis-${i}`}>
+                        <PaginationEllipsis />
+                      </PaginationItem>
+                    ) : (
+                      <PaginationItem key={p}>
+                        <PaginationLink
+                          isActive={p === page}
+                          onClick={() => onPageChange(p)}
+                        >
+                          {p}
+                        </PaginationLink>
+                      </PaginationItem>
+                    )
+                  );
+                })()}
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => pagination.hasNextPage && onPageChange(pagination.page + 1)}
+                    aria-disabled={!pagination.hasNextPage}
+                    className={cn(!pagination.hasNextPage && "pointer-events-none opacity-50")}
+                    
+                  />
+                </PaginationItem>
+              </PaginationContent>
+
+            </Pagination>
+            <span className="whitespace-nowrap text-xs">
               Pagina {pagination.page} di {pagination.totalPages} ({pagination.totalItems} {tableType === "docenti" ? "docenti" : tableType === "utenze" ? "utenze" : "registrazioni"})
             </span>
           </div>
-
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <PaginationPrevious
-                  onClick={() => pagination.hasPreviousPage && onPageChange(pagination.page - 1)}
-                  aria-disabled={!pagination.hasPreviousPage}
-                  className={cn(!pagination.hasPreviousPage && "pointer-events-none opacity-50")}
-                  text="Precedente"
-                />
-              </PaginationItem>
-              {(() => {
-                const { page, totalPages } = pagination;
-                const pages: (number | "ellipsis")[] = [];
-                if (totalPages <= 7) {
-                  for (let i = 1; i <= totalPages; i++) pages.push(i);
-                } else {
-                  pages.push(1);
-                  if (page > 3) pages.push("ellipsis");
-                  for (let i = Math.max(2, page - 1); i <= Math.min(totalPages - 1, page + 1); i++) {
-                    if (!pages.includes(i)) pages.push(i);
-                  }
-                  if (page < totalPages - 2) pages.push("ellipsis");
-                  if (totalPages > 1) pages.push(totalPages);
-                }
-                return pages.map((p, i) =>
-                  p === "ellipsis" ? (
-                    <PaginationItem key={`ellipsis-${i}`}>
-                      <PaginationEllipsis />
-                    </PaginationItem>
-                  ) : (
-                    <PaginationItem key={p}>
-                      <PaginationLink
-                        isActive={p === page}
-                        onClick={() => onPageChange(p)}
-                      >
-                        {p}
-                      </PaginationLink>
-                    </PaginationItem>
-                  )
-                );
-              })()}
-              <PaginationItem>
-                <PaginationNext
-                  onClick={() => pagination.hasNextPage && onPageChange(pagination.page + 1)}
-                  aria-disabled={!pagination.hasNextPage}
-                  className={cn(!pagination.hasNextPage && "pointer-events-none opacity-50")}
-                  text="Successiva"
-                />
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
         </div>
       )}
     </>

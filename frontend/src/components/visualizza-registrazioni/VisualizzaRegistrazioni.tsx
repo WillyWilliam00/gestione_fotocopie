@@ -11,6 +11,7 @@ import ErrorFallback from "@/components/common/ErrorFallback";
 import { ServerFiltersBar } from "@/components/common/ServerFiltersBar";
 import { useQueryClient } from "@tanstack/react-query";
 import type { RegistrazioniCopieQuery } from "@shared/validation";
+import type { RegistrazioniCopieSort } from "@shared/types";
 
 type TypeForm = "view" | "edit" | "delete" | null;
 
@@ -51,6 +52,15 @@ export default function VisualizzaRegistrazioni() {
     setRegistrazioniQuery((prev) => ({
       ...prev,
       pageSize: Number(pageSize),
+      page: 1,
+    }));
+  }, []);
+
+  const handleSortChange = useCallback((sortField: RegistrazioniCopieSort['field'], sortOrder: RegistrazioniCopieSort['order']) => {
+    setRegistrazioniQuery((prev) => ({
+      ...prev,
+      sortField,
+      sortOrder,
       page: 1,
     }));
   }, []);
@@ -96,7 +106,7 @@ export default function VisualizzaRegistrazioni() {
     <div>
       <HeaderSection title="Visualizza Registrazioni Copie" icon={FileIcon} />
 
-      <div className="w-full mt-10 px-4">
+      <div className="w-full xl:mt-10 p-2 lg:p-4">
         <div className="flex flex-row gap-2 w-full justify-between items-end">
           <ServerFiltersBar
             type="registrazioni"
@@ -122,6 +132,7 @@ export default function VisualizzaRegistrazioni() {
               onView={(r) => handleOpenForm("view", r)}
               onEdit={(r) => handleOpenForm("edit", r)}
               onDelete={(r) => handleOpenForm("delete", r)}
+              handleSortChange={handleSortChange}
             />
           </Suspense>
         </ErrorBoundary>
