@@ -150,13 +150,13 @@ describe('Rotte /api/docenti', () => {
   it('PUT /api/docenti/update-docente/:id con collaboratore restituisce 403', async () => {
     const { token } = await loginAsCollaboratore();
     const { token: adminToken } = await loginAsAdmin();
-    //creiamo un docente con l'admin
+    // Creiamo un docente con l'admin (nome/cognome univoci per non conflitto con altro test)
     const createRes = await request(app)
       .post('/api/docenti/new-docente')
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         nome: 'Da',
-        cognome: 'Eliminare',
+        cognome: 'Aggiornare',
         limiteCopie: 0,
       });
     expect(createRes.status).toBe(201);
