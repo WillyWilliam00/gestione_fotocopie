@@ -27,17 +27,6 @@ const stats = [
   },
 ];
 
-const chartData = [
-  { label: "Lun", value: 45 },
-  { label: "Mar", value: 60 },
-  { label: "Mer", value: 35 },
-  { label: "Gio", value: 80 },
-  { label: "Ven", value: 50 },
-  { label: "Sab", value: 20 },
-  { label: "Dom", value: 10 },
-];
-
-
 export default function StatsSection() {
   return (
     <section id="stats" className="py-20 md:py-32 px-4">
