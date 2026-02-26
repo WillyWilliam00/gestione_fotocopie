@@ -17,7 +17,7 @@ import { HugeiconsIcon } from "@hugeicons/react";
 import ErrorFallback from "../common/ErrorFallback";
 import ErrorBoundary from "../common/ErrorBoundary";
 import { useQueryClient } from "@tanstack/react-query";
-import { useExportDocenti } from "@/hooks/use-docenti.js";
+import { useExportDocenti } from "@/hooks/use-docenti";
 
 type TypeForm = "add" | "edit" | "view" | "delete" | null;
 

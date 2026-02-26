@@ -1,7 +1,7 @@
 import { useRef, useEffect, useState } from "react";
 import { useVirtualizer } from "@tanstack/react-virtual";
 import RegistraCopieItem from "./RegistraCopieItem.js";
-import { useDocentiInfinite } from "@/hooks/use-docenti.js";
+import { useDocentiInfinite } from "@/hooks/use-docenti";
 import type { DocenteConRegistrazioni } from "../../../../shared/types.js";
 
 const ROW_HEIGHT_ESTIMATE = 90;
