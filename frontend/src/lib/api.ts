@@ -16,7 +16,9 @@ import type { RefreshTokenResponse } from '../../../shared/types.js';
 
 function getBaseUrl(): string {
   // Se è specificata una variabile d'ambiente, usala (ha priorità)
- 
+    if(import.meta.env.VITE_API_BASE_URL) {
+      return import.meta.env.VITE_API_BASE_URL;
+    }
 
   // Rileva l'hostname corrente (window.location.hostname)
   // Se siamo su localhost o 127.0.0.1, usa localhost
