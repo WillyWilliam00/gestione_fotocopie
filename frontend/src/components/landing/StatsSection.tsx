@@ -1,5 +1,4 @@
 import { motion } from "framer-motion";
-import { Progress } from "@/components/ui/progress";
 import {
   FileIcon,
   LayoutIcon,
@@ -38,7 +37,6 @@ const chartData = [
   { label: "Dom", value: 10 },
 ];
 
-const maxValue = Math.max(...chartData.map((d) => d.value));
 
 export default function StatsSection() {
   return (

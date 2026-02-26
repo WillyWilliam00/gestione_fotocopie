@@ -292,3 +292,35 @@ export function useBulkImportDocenti() {
     },
   });
 }
+
+
+export function useExportDocenti() {
+  return useMutation({
+    mutationFn: async (query: DocentiQuery) => {
+      const params = new URLSearchParams();
+      if (query.nome) params.append('nome', query.nome);
+      if (query.cognome) params.append('cognome', query.cognome);
+      if (query.sortField) params.append('sortField', query.sortField);
+      if (query.sortOrder) params.append('sortOrder', query.sortOrder ?? 'asc');
+      const response = await api.get<Blob>(`/docenti/export?${params.toString()}`, {
+        responseType: 'blob',
+      });
+      return response.data;
+    },
+    onSuccess: (data) => {
+      const blob = new Blob([data], { type: 'text/csv;charset=utf-8;' });
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `docenti-${new Date().toISOString().slice(0, 10)}.csv`);
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      toast.success("Esportazione docenti completata");
+    },
+    onError: (err) => {
+      toast.error(formatError(err, "Errore durante l'esportazione dei docenti."));
+    },
+  })
+}
